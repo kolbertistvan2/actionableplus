@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
 import { useLocalize } from '~/hooks';
 import { Tools } from 'librechat-data-provider';
 import { UIResourceRenderer } from '@mcp-ui/client';
 import UIResourceCarousel from './UIResourceCarousel';
+import { BrowserPreview } from '~/components/BrowserPreview';
+import { useBrowserbaseDetection } from '~/hooks/useBrowserbaseDetection';
+import { browserSessionFamily, browserPanelOpenFamily } from '~/store';
 import type { TAttachment, UIResource } from 'librechat-data-provider';
 
 function OptimizedCodeBlock({ text, maxHeight = 320 }: { text: string; maxHeight?: number }) {
@@ -38,6 +43,26 @@ export default function ToolCallInfo({
   attachments?: TAttachment[];
 }) {
   const localize = useLocalize();
+  const { conversationId = '' } = useParams<{ conversationId: string }>();
+  const [, setIsPanelOpen] = useRecoilState(browserPanelOpenFamily(conversationId));
+  const [browserSession, setBrowserSession] = useRecoilState(browserSessionFamily(conversationId));
+  const { detectSession, isBrowserbaseTool } = useBrowserbaseDetection();
+
+  // Detect Browserbase session from output
+  const detectedSession = useMemo(() => {
+    if (!output || !isBrowserbaseTool(function_name)) {
+      return null;
+    }
+    return detectSession(output, function_name);
+  }, [output, function_name, detectSession, isBrowserbaseTool]);
+
+  // Update global session state if new session detected
+  useMemo(() => {
+    if (detectedSession && detectedSession.debuggerUrl) {
+      setBrowserSession(detectedSession);
+    }
+  }, [detectedSession, setBrowserSession]);
+
   const formatText = (text: string) => {
     try {
       return JSON.stringify(JSON.parse(text), null, 2);
@@ -79,6 +104,18 @@ export default function ToolCallInfo({
             <div>
               <OptimizedCodeBlock text={formatText(output)} maxHeight={250} />
             </div>
+
+            {/* Browser Preview for Browserbase sessions */}
+            {detectedSession && detectedSession.debuggerUrl && (
+              <div className="my-3">
+                <BrowserPreview
+                  session={detectedSession}
+                  onExpand={() => setIsPanelOpen(true)}
+                  className="max-w-[320px]"
+                />
+              </div>
+            )}
+
             {uiResources.length > 0 && (
               <div className="my-2 text-sm font-medium text-text-primary">
                 {localize('com_ui_ui_resources')}
