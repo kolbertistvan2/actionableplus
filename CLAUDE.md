@@ -32,8 +32,12 @@ E-commerce consulting app with specialized AI agents (based on LibreChat).
 - See: https://ai.google.dev/gemini-api/docs/models
 
 ### OpenAI
-- `gpt-4o` - Most capable
-- `gpt-4o-mini` - Fast, efficient
+- `gpt-5.2` - Latest, most capable
+- `gpt-5.1` - Previous generation flagship
+- `gpt-5` / `gpt-5-mini` / `gpt-5-nano` - GPT-5 family
+- `o4-mini` - Latest reasoning model (small)
+- `o3` - Reasoning model
+- `o1` / `o1-mini` - Previous reasoning models
 - See: https://platform.openai.com/docs/models
 
 ## Development Workflow

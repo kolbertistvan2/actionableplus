@@ -1,13 +1,64 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useSetRecoilState, useRecoilState } from 'recoil';
 import { Button } from '@librechat/client';
 import { TriangleAlert } from 'lucide-react';
-import { actionDelimiter, actionDomainSeparator, Constants } from 'librechat-data-provider';
-import type { TAttachment } from 'librechat-data-provider';
+import { actionDelimiter, actionDomainSeparator, Constants, Tools } from 'librechat-data-provider';
+import type { TAttachment, UIResource } from 'librechat-data-provider';
 import { useLocalize, useProgress } from '~/hooks';
+import { activeUIResourceFamily, browserSidePanelOpenFamily, currentBrowsedUrlFamily } from '~/store';
+import { BrowserThumbnail } from '~/components/BrowserPreview';
 import { AttachmentGroup } from './Parts';
 import ToolCallInfo from './ToolCallInfo';
 import ProgressText from './ProgressText';
 import { logger, cn } from '~/utils';
+
+/**
+ * Maps clean tool action names to user-friendly display names
+ * Used after stripping browserbase_ and stagehand_ prefixes
+ */
+const BROWSER_ACTION_NAMES: Record<string, { running: string; completed: string }> = {
+  session_create: { running: 'Starting browser', completed: 'Browser started' },
+  session_close: { running: 'Closing browser', completed: 'Browser closed' },
+  navigate: { running: 'Browsing', completed: 'Navigated' },
+  act: { running: 'Clicking element', completed: 'Clicked element' },
+  observe: { running: 'Viewing the page', completed: 'Observed page' },
+  extract: { running: 'Extracting data', completed: 'Data extracted' },
+  screenshot: { running: 'Taking screenshot', completed: 'Screenshot taken' },
+  click: { running: 'Clicking', completed: 'Clicked' },
+  type: { running: 'Typing', completed: 'Typed text' },
+  scroll: { running: 'Scrolling', completed: 'Scrolled' },
+  get_text: { running: 'Reading text', completed: 'Text extracted' },
+  get_url: { running: 'Getting URL', completed: 'URL retrieved' },
+  run_javascript: { running: 'Running script', completed: 'Script executed' },
+  agent: { running: 'Running browser agent', completed: 'Browser agent completed' },
+  deeplocator: { running: 'Finding element', completed: 'Element found' },
+};
+
+/**
+ * Extracts clean action name from browserbase/stagehand tool names
+ * Strips "browserbase_", "browserbase_stagehand_", and "stagehand_" prefixes
+ */
+function getCleanBrowserAction(toolName: string): string | null {
+  const prefixes = ['browserbase_stagehand_', 'browserbase_', 'stagehand_'];
+  for (const prefix of prefixes) {
+    if (toolName.toLowerCase().startsWith(prefix)) {
+      return toolName.substring(prefix.length);
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if this is a browser-related tool and get friendly name
+ */
+function getBrowserFriendlyName(toolName: string): { running: string; completed: string } | null {
+  const cleanAction = getCleanBrowserAction(toolName);
+  if (cleanAction && BROWSER_ACTION_NAMES[cleanAction]) {
+    return BROWSER_ACTION_NAMES[cleanAction];
+  }
+  return null;
+}
 
 export default function ToolCall({
   initialProgress = 0.1,
@@ -30,6 +81,10 @@ export default function ToolCall({
   expires_at?: number;
 }) {
   const localize = useLocalize();
+  const { conversationId = '' } = useParams<{ conversationId: string }>();
+  const setActiveUIResource = useSetRecoilState(activeUIResourceFamily(conversationId));
+  const setCurrentBrowsedUrl = useSetRecoilState(currentBrowsedUrlFamily(conversationId));
+  const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(conversationId));
   const [showInfo, setShowInfo] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number | undefined>(0);
@@ -101,9 +156,18 @@ export default function ToolCall({
   const progress = useProgress(initialProgress);
   const cancelled = (!isSubmitting && progress < 1) || error === true;
 
+  // Get friendly display names for browser tools (rule-based)
+  const friendlyNames = useMemo(() => {
+    return getBrowserFriendlyName(function_name);
+  }, [function_name]);
+
   const getFinishedText = () => {
     if (cancelled) {
       return localize('com_ui_cancelled');
+    }
+    // Use friendly name if available
+    if (friendlyNames) {
+      return friendlyNames.completed;
     }
     if (isMCPToolCall === true) {
       return localize('com_assistants_completed_function', { 0: function_name });
@@ -112,6 +176,16 @@ export default function ToolCall({
       return localize('com_assistants_completed_action', { 0: domain });
     }
     return localize('com_assistants_completed_function', { 0: function_name });
+  };
+
+  const getInProgressText = () => {
+    // Use friendly name if available
+    if (friendlyNames) {
+      return friendlyNames.running;
+    }
+    return function_name
+      ? localize('com_assistants_running_var', { 0: function_name })
+      : localize('com_assistants_running_action');
   };
 
   useLayoutEffect(() => {
@@ -157,6 +231,39 @@ export default function ToolCall({
     };
   }, [showInfo, isAnimating]);
 
+  // Extract UI Resources from attachments for side panel
+  const uiResources: UIResource[] =
+    attachments
+      ?.filter((attachment) => attachment.type === Tools.ui_resources)
+      .flatMap((attachment) => {
+        return attachment[Tools.ui_resources] as UIResource[];
+      }) ?? [];
+
+  // When UIResource is detected, update state (panel doesn't auto-open - user clicks thumbnail)
+  useEffect(() => {
+    if (uiResources.length > 0) {
+      // Use the latest UIResource (last one in array)
+      const latestResource = uiResources[uiResources.length - 1];
+      setActiveUIResource(latestResource);
+      // Panel nem nyílik automatikusan - a thumbnail-re kattintva nyílik
+    }
+  }, [uiResources.length, setActiveUIResource]);
+
+  // Extract and store the actual browsed URL from navigate tool args
+  useEffect(() => {
+    const cleanAction = getCleanBrowserAction(function_name);
+    if (cleanAction === 'navigate' && _args) {
+      try {
+        const parsedArgs = typeof _args === 'string' ? JSON.parse(_args) : _args;
+        if (parsedArgs.url && typeof parsedArgs.url === 'string') {
+          setCurrentBrowsedUrl(parsedArgs.url);
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, [function_name, _args, setCurrentBrowsedUrl]);
+
   if (!isLast && (!function_name || function_name.length === 0) && !output) {
     return null;
   }
@@ -167,11 +274,7 @@ export default function ToolCall({
         <ProgressText
           progress={progress}
           onClick={() => setShowInfo((prev) => !prev)}
-          inProgressText={
-            function_name
-              ? localize('com_assistants_running_var', { 0: function_name })
-              : localize('com_assistants_running_action')
-          }
+          inProgressText={getInProgressText()}
           authText={
             !cancelled && authDomain.length > 0 ? localize('com_ui_requires_auth') : undefined
           }
@@ -211,7 +314,6 @@ export default function ToolCall({
           <div ref={contentRef}>
             {showInfo && hasInfo && (
               <ToolCallInfo
-                key="tool-call-info"
                 input={args ?? ''}
                 output={output}
                 domain={authDomain || (domain ?? '')}

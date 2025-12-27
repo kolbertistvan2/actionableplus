@@ -1,9 +1,12 @@
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import throttle from 'lodash/throttle';
-import { useRecoilValue } from 'recoil';
+import { useRecoilValue, useRecoilState } from 'recoil';
+import { useParams } from 'react-router-dom';
 import { getConfigDefaults } from 'librechat-data-provider';
 import { ResizablePanel, ResizablePanelGroup, useMediaQuery } from '@librechat/client';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
+import { BrowserSidePanel } from '~/components/BrowserPreview';
+import { activeUIResourceFamily, browserSidePanelOpenFamily } from '~/store';
 import { useGetStartupConfig } from '~/data-provider';
 import ArtifactsPanel from './ArtifactsPanel';
 import { normalizeLayout } from '~/utils';
@@ -31,6 +34,10 @@ const SidePanelGroup = memo(
     artifacts,
     children,
   }: SidePanelProps) => {
+    const { conversationId = '' } = useParams<{ conversationId: string }>();
+    const activeUIResource = useRecoilValue(activeUIResourceFamily(conversationId));
+    const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(conversationId));
+
     const { data: startupConfig } = useGetStartupConfig();
     const interfaceConfig = useMemo(
       () => startupConfig?.interface ?? defaultInterface,
@@ -144,6 +151,15 @@ const SidePanelGroup = memo(
             />
           )}
         </ResizablePanelGroup>
+
+        {/* Browser Side Panel - flex item on the right */}
+        {isBrowserPanelOpen && (
+          <BrowserSidePanel
+            resource={activeUIResource}
+            isOpen={isBrowserPanelOpen}
+            onClose={() => setIsBrowserPanelOpen(false)}
+          />
+        )}
         {artifacts != null && isSmallScreen && (
           <div className="fixed inset-0 z-[100]">{artifacts}</div>
         )}
@@ -154,6 +170,7 @@ const SidePanelGroup = memo(
             onClick={handleClosePanel}
           />
         )}
+
       </>
     );
   },

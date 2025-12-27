@@ -1,8 +1,10 @@
 import { memo, useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import { useWatch } from 'react-hook-form';
+import { useParams } from 'react-router-dom';
 import { TextareaAutosize } from '@librechat/client';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { Constants, isAssistantsEndpoint, isAgentsEndpoint } from 'librechat-data-provider';
+import { BrowserThumbnail } from '~/components/BrowserPreview';
 import {
   useChatContext,
   useChatFormContext,
@@ -34,12 +36,14 @@ import EditBadges from './EditBadges';
 import BadgeRow from './BadgeRow';
 import Mention from './Mention';
 import store from '~/store';
+import { activeUIResourceFamily, browserSidePanelOpenFamily } from '~/store';
 
 const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   useFocusChatEffect(textAreaRef);
   const localize = useLocalize();
+  const { conversationId: convId = '' } = useParams<{ conversationId: string }>();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [, setIsScrollable] = useState(false);
@@ -62,6 +66,10 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const [showMentionPopover, setShowMentionPopover] = useRecoilState(
     store.showMentionPopoverFamily(index),
   );
+
+  // Browser preview state
+  const activeUIResource = useRecoilValue(activeUIResourceFamily(convId));
+  const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(convId));
 
   const { requiresKey } = useRequiresKey();
   const methods = useChatFormContext();
@@ -216,6 +224,17 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
       )}
     >
       <div className="relative flex h-full flex-1 items-stretch md:flex-col">
+        {/* Browser Thumbnail - Manus-style sticky card above chat input */}
+        {activeUIResource && !isBrowserPanelOpen && (
+          <div className="mb-3 w-full">
+            <BrowserThumbnail
+              resource={activeUIResource}
+              isActive={isSubmitting}
+              onClick={() => setIsBrowserPanelOpen(true)}
+              conversationId={convId}
+            />
+          </div>
+        )}
         <div className={cn('flex w-full items-center', isRTL && 'flex-row-reverse')}>
           {showPlusPopover && !isAssistantsEndpoint(endpoint) && (
             <Mention

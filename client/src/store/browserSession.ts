@@ -1,5 +1,6 @@
 import { atomFamily } from 'recoil';
 import type { BrowserSession } from '~/components/BrowserPreview/types';
+import type { UIResource } from 'librechat-data-provider';
 
 /**
  * Browser session state per conversation
@@ -17,4 +18,31 @@ export const browserSessionFamily = atomFamily<BrowserSession | null, string>({
 export const browserPanelOpenFamily = atomFamily<boolean, string>({
   key: 'browserPanelOpenByConversation',
   default: false,
+});
+
+/**
+ * Active UI Resource for browser panel per conversation
+ * Stores the latest UIResource iframe to display in the side panel
+ */
+export const activeUIResourceFamily = atomFamily<UIResource | null, string>({
+  key: 'activeUIResourceByConversation',
+  default: null,
+});
+
+/**
+ * Browser side panel visibility per conversation
+ * Auto-opens when UIResource is detected, can be manually closed
+ */
+export const browserSidePanelOpenFamily = atomFamily<boolean, string>({
+  key: 'browserSidePanelOpenByConversation',
+  default: false,
+});
+
+/**
+ * Current browsed URL per conversation
+ * Updated when navigate tool is called - stores the actual website URL (not browserbase debug URL)
+ */
+export const currentBrowsedUrlFamily = atomFamily<string, string>({
+  key: 'currentBrowsedUrlByConversation',
+  default: '',
 });

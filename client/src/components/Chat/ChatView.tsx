@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
+import { useRecoilValue } from 'recoil';
 import { useForm } from 'react-hook-form';
 import { Spinner } from '@librechat/client';
 import { useParams } from 'react-router-dom';
@@ -16,8 +16,6 @@ import {
 } from '~/hooks';
 import ConversationStarters from './Input/ConversationStarters';
 import { useGetMessagesByConvoId } from '~/data-provider';
-import { BrowserPanel } from '~/components/BrowserPreview';
-import { browserSessionFamily, browserPanelOpenFamily } from '~/store';
 import MessagesView from './Messages/MessagesView';
 import Presentation from './Presentation';
 import ChatForm from './Input/ChatForm';
@@ -41,10 +39,6 @@ function ChatView({ index = 0 }: { index?: number }) {
   const { conversationId } = useParams();
   const rootSubmission = useRecoilValue(store.submissionByIndex(index));
   const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
-
-  // Browser session state for Live View
-  const browserSession = useRecoilValue(browserSessionFamily(conversationId ?? ''));
-  const [isPanelOpen, setIsPanelOpen] = useRecoilState(browserPanelOpenFamily(conversationId ?? ''));
 
   const fileMap = useFileMapContext();
 
@@ -124,15 +118,6 @@ function ChatView({ index = 0 }: { index?: number }) {
               </>
             </div>
           </Presentation>
-
-          {/* Browser Panel for Browserbase Live View */}
-          {browserSession && (
-            <BrowserPanel
-              session={browserSession}
-              isOpen={isPanelOpen}
-              onClose={() => setIsPanelOpen(false)}
-            />
-          )}
         </AddedChatContext.Provider>
       </ChatContext.Provider>
     </ChatFormProvider>

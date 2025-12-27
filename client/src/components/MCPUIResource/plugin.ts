@@ -4,7 +4,8 @@ import type { UIResourceNode } from './types';
 
 export const UI_RESOURCE_MARKER = '\\ui';
 // Pattern matches: \ui{id1} or \ui{id1,id2,id3} and captures everything between the braces
-export const UI_RESOURCE_PATTERN = /\\ui\{([\w]+(?:,[\w]+)*)\}/g;
+// Supports alphanumeric, underscore, hyphen, and dot characters in IDs (for screenshot IDs like "screenshot-name-2025-12-27T19-46-20.548Z")
+export const UI_RESOURCE_PATTERN = /\\ui\{([\w.\-]+(?:,[\w.\-]+)*)\}/g;
 
 /**
  * Process text nodes and replace UI resource markers with components
