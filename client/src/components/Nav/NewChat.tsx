@@ -55,29 +55,46 @@ export default function NewChat({
 
   return (
     <>
-      <div className="flex items-center justify-between py-[2px] md:py-2">
-        <TooltipAnchor
-          description={localize('com_nav_close_sidebar')}
-          render={
-            <Button
-              id={CLOSE_SIDEBAR_ID}
-              size="icon"
-              variant="outline"
-              data-testid="close-sidebar-button"
-              aria-label={localize('com_nav_close_sidebar')}
-              aria-expanded={true}
-              className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
-              onClick={handleToggleNav}
-            >
-              <Sidebar aria-hidden="true" className="max-md:hidden" />
-              <MobileSidebar
-                aria-hidden="true"
-                className="m-1 inline-flex size-10 items-center justify-center md:hidden"
-              />
-            </Button>
-          }
+      <div className="flex items-center py-[2px] md:py-2">
+        {/* Left side - flex-1 for equal spacing */}
+        <div className="flex flex-1 justify-start">
+          <TooltipAnchor
+            description={localize('com_nav_close_sidebar')}
+            render={
+              <Button
+                id={CLOSE_SIDEBAR_ID}
+                size="icon"
+                variant="outline"
+                data-testid="close-sidebar-button"
+                aria-label={localize('com_nav_close_sidebar')}
+                aria-expanded={true}
+                className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
+                onClick={handleToggleNav}
+              >
+                <Sidebar aria-hidden="true" className="max-md:hidden" />
+                <MobileSidebar
+                  aria-hidden="true"
+                  className="m-1 inline-flex size-10 items-center justify-center md:hidden"
+                />
+              </Button>
+            }
+          />
+        </div>
+
+        {/* Actionable+ Logo - centered */}
+        <img
+          src="assets/logo-light.svg"
+          alt="Actionable+"
+          className="h-6 max-w-[140px] object-contain dark:hidden"
         />
-        <div className="flex gap-0.5">
+        <img
+          src="assets/logo-dark.svg"
+          alt="Actionable+"
+          className="hidden h-6 max-w-[140px] object-contain dark:block"
+        />
+
+        {/* Right side - flex-1 for equal spacing */}
+        <div className="flex flex-1 justify-end gap-0.5">
           {headerButtons}
 
           <TooltipAnchor

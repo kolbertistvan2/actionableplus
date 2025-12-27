@@ -90,6 +90,20 @@ docker-compose down && docker-compose up -d
 - API keys configured in .env file
 - MCP integration requires librechat.yaml with mcpServers section
 
+## Docker Volume Mounts
+
+A `docker-compose.override.yml` fájlban a `client/public/assets` mappa be van kötve a containerbe:
+
+```yaml
+volumes:
+  - type: bind
+    source: ./client/public/assets
+    target: /app/client/public/assets
+    read_only: true
+```
+
+Ez lehetővé teszi, hogy a lokális assets fájlok (logo, favicon, stb.) azonnal érvénybe lépjenek rebuild nélkül. Csak `docker-compose up -d api` újraindítás kell a változások után.
+
 ## MCP Browser Automation (Completed)
 
 Browser automation is fully integrated with Stagehand MCP:
