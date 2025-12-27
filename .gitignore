@@ -67,7 +67,7 @@ bower_components/
 .flooignore
 
 #config file
-librechat.yaml
+# librechat.yaml - now tracked for Railway deployment (no secrets inside)
 librechat.yml
 
 # Environment

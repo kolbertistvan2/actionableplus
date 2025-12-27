@@ -1,0 +1,35 @@
+version: 1.2.1
+cache: true
+
+# Model configuration
+# - enforce: false = users can use any model, not just specs
+# - prioritize: false = users can switch between endpoints freely
+# - addedEndpoints = explicitly allows these providers in UI
+# - default: true = auto-selected on new chat
+modelSpecs:
+  enforce: false
+  prioritize: false
+  addedEndpoints:
+    - agents
+    - google
+    - anthropic
+    - openAI
+  list:
+    - name: ecommerce-consultant
+      label: Ecommerce Consultant v0.1
+      default: true
+      description: "E-commerce consulting agent with browser automation"
+      preset:
+        endpoint: agents
+        agent_id: agent_Ln1Ud-C92pXV50UW_Qo0Z
+
+# MCP Browser Automation (Browserbase/Stagehand)
+mcpServers:
+  browserbase:
+    type: streamable-http
+    url: https://stagehand-mcp-server-production.up.railway.app/mcp
+    timeout: 600000
+    initTimeout: 30000
+    requiresOAuth: false
+    title: "Browser Automation"
+    description: "AI-powered browser control with Stagehand"
