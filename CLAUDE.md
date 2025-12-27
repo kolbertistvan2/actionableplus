@@ -59,7 +59,8 @@ E-commerce consulting app with specialized AI agents (based on LibreChat).
 
 - **Working:** Default LibreChat with all providers (Anthropic, Google, OpenAI)
 - **Customized:** UI translations (EN/HU) - "Consultants" branding
-- **Pending:** MCP browser automation integration
+- **Completed:** MCP browser automation with Browserbase/Stagehand
+- **Completed:** Manus-style browser preview UI (BrowserThumbnail + BrowserSidePanel)
 
 ## Commands
 
@@ -89,12 +90,30 @@ docker-compose down && docker-compose up -d
 - API keys configured in .env file
 - MCP integration requires librechat.yaml with mcpServers section
 
-## MCP Integration (TODO)
+## MCP Browser Automation (Completed)
 
-To enable browser automation with Stagehand MCP:
+Browser automation is fully integrated with Stagehand MCP:
 
-1. Create `librechat.yaml` with mcpServers config
-2. Mount it in docker-compose.override.yml
-3. Rebuild with custom Dockerfile (for code changes)
+- **BrowserThumbnail:** Compact preview card above chat input showing live browser session
+- **BrowserSidePanel:** Full browser view beside chat (480px width)
+- **URL Tracking:** Shows actual browsed URL (from navigate tool), not browserbase debug URL
+- **Live Preview:** Scaled iframe showing browser content
 
-See `claude-plan.md` for detailed MCP architecture plan.
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| BrowserThumbnail | `client/src/components/BrowserPreview/BrowserThumbnail.tsx` | Compact preview card |
+| BrowserSidePanel | `client/src/components/BrowserPreview/BrowserSidePanel.tsx` | Full browser panel |
+| currentBrowsedUrlFamily | `client/src/store/browserSession.ts` | Recoil state for URL |
+| ToolCall (navigate) | `client/src/components/Chat/Messages/Content/ToolCall.tsx` | Extracts URL from navigate args |
+
+### librechat.yaml MCP Config
+
+```yaml
+mcpServers:
+  browserbase:
+    type: streamable-http
+    url: https://stagehand-mcp-server-production.up.railway.app/mcp
+    timeout: 600000
+```
