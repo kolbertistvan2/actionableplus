@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRecoilValue } from 'recoil';
-import { Globe, Maximize2 } from 'lucide-react';
+import { Globe, Maximize2, X } from 'lucide-react';
 import type { UIResource } from 'librechat-data-provider';
 import { currentBrowsedUrlFamily } from '~/store';
 
@@ -9,13 +9,14 @@ interface BrowserThumbnailProps {
   isActive: boolean;
   onClick: () => void;
   conversationId: string;
+  onDismiss?: () => void;
 }
 
 /**
  * BrowserThumbnail - Manus-style thumbnail card above chat input
  * Compact horizontal layout: preview image | task info | expand icon
  */
-export function BrowserThumbnail({ resource, isActive, onClick, conversationId }: BrowserThumbnailProps) {
+export function BrowserThumbnail({ resource, isActive, onClick, conversationId, onDismiss }: BrowserThumbnailProps) {
   // Get the actual browsed URL from navigate tool (stored in Recoil)
   const browsedUrl = useRecoilValue(currentBrowsedUrlFamily(conversationId));
 
@@ -51,6 +52,13 @@ export function BrowserThumbnail({ resource, isActive, onClick, conversationId }
     <div
       className="group flex w-full cursor-pointer items-stretch overflow-hidden rounded-2xl border border-border-light bg-surface-primary shadow-sm transition-all hover:shadow-md hover:border-border-medium sm:inline-flex sm:w-auto"
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
     >
       {/* Preview thumbnail - left side */}
       <div className="relative h-[72px] w-[80px] flex-shrink-0 overflow-hidden bg-surface-tertiary sm:w-[100px]">
@@ -94,9 +102,34 @@ export function BrowserThumbnail({ resource, isActive, onClick, conversationId }
         </div>
       </div>
 
-      {/* Expand indicator on hover */}
-      <div className="flex flex-shrink-0 items-center px-3 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
-        <Maximize2 className="h-4 w-4" />
+      {/* Action buttons on hover */}
+      <div className="flex flex-shrink-0 items-center gap-1 px-2 opacity-0 transition-opacity group-hover:opacity-100">
+        {/* Expand button */}
+        <button
+          type="button"
+          className="rounded p-1.5 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          aria-label="Expand browser preview"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+        {/* Dismiss button */}
+        {onDismiss && (
+          <button
+            type="button"
+            className="rounded p-1.5 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+            aria-label="Dismiss browser preview"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

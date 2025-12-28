@@ -43,8 +43,13 @@ E-commerce consulting app with specialized AI agents (based on LibreChat).
 ## Development Workflow
 
 ```
-1. Fork (GitHub) → 2. Local Docker → 3. Railway Deploy
+1. Fork (GitHub) → 2. Local dev (Docker optional) → 3. Git commit & push → 4. Railway auto-deploys
 ```
+
+**Railway auto-deploy:** Push to `main` branch triggers automatic build & deploy on Railway.
+No local Docker needed for deployment - Railway builds from Dockerfile.
+
+**GitHub repo:** https://github.com/kolbertistvan2/actionableplus
 
 ## Key Files
 

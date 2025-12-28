@@ -46,3 +46,13 @@ export const currentBrowsedUrlFamily = atomFamily<string, string>({
   key: 'currentBrowsedUrlByConversation',
   default: '',
 });
+
+/**
+ * Browser thumbnail dismissed state per conversation
+ * When true, the thumbnail card is hidden but the Globe icon remains visible
+ * Resets to false when new UIResource arrives or when side panel is closed
+ */
+export const browserThumbnailDismissedFamily = atomFamily<boolean, string>({
+  key: 'browserThumbnailDismissedByConversation',
+  default: false,
+});

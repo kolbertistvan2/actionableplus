@@ -36,7 +36,8 @@ import EditBadges from './EditBadges';
 import BadgeRow from './BadgeRow';
 import Mention from './Mention';
 import store from '~/store';
-import { activeUIResourceFamily, browserSidePanelOpenFamily } from '~/store';
+import { activeUIResourceFamily, browserSidePanelOpenFamily, browserThumbnailDismissedFamily } from '~/store';
+import BrowserToggleButton from './BrowserToggleButton';
 
 const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -70,6 +71,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   // Browser preview state
   const activeUIResource = useRecoilValue(activeUIResourceFamily(convId));
   const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(convId));
+  const [isThumbnailDismissed, setIsThumbnailDismissed] = useRecoilState(browserThumbnailDismissedFamily(convId));
 
   const { requiresKey } = useRequiresKey();
   const methods = useChatFormContext();
@@ -184,6 +186,23 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     }
   }, [isEditingBadges, badges, backupBadges.length]);
 
+  // Reset thumbnail dismissed state when new browser resource arrives
+  useEffect(() => {
+    if (activeUIResource) {
+      setIsThumbnailDismissed(false);
+    }
+  }, [activeUIResource?.uri, setIsThumbnailDismissed]);
+
+  // Auto-hide thumbnail 5 seconds after browsing completes
+  useEffect(() => {
+    if (!isSubmitting && activeUIResource && !isThumbnailDismissed && !isBrowserPanelOpen) {
+      const timer = setTimeout(() => {
+        setIsThumbnailDismissed(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSubmitting, activeUIResource, isThumbnailDismissed, isBrowserPanelOpen, setIsThumbnailDismissed]);
+
   const handleSaveBadges = useCallback(() => {
     setIsEditingBadges(false);
     setBackupBadges([]);
@@ -225,13 +244,14 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     >
       <div className="relative flex h-full flex-1 flex-col">
         {/* Browser Thumbnail - Manus-style sticky card above chat input */}
-        {activeUIResource && !isBrowserPanelOpen && (
+        {activeUIResource && !isBrowserPanelOpen && !isThumbnailDismissed && (
           <div className="mb-3 w-full">
             <BrowserThumbnail
               resource={activeUIResource}
               isActive={isSubmitting}
               onClick={() => setIsBrowserPanelOpen(true)}
               conversationId={convId}
+              onDismiss={() => setIsThumbnailDismissed(true)}
             />
           </div>
         )}
@@ -338,6 +358,13 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
               <div className={`${isRTL ? 'mr-2' : 'ml-2'}`}>
                 <AttachFileChat conversation={conversation} disableInputs={disableInputs} />
               </div>
+              {/* Browser toggle button - always visible when session exists */}
+              <BrowserToggleButton
+                conversationId={convId}
+                isActive={isSubmitting}
+                onClick={() => setIsBrowserPanelOpen(true)}
+                disabled={disableInputs}
+              />
               <BadgeRow
                 showEphemeralBadges={!isAgentsEndpoint(endpoint) && !isAssistantsEndpoint(endpoint)}
                 isSubmitting={isSubmitting}
