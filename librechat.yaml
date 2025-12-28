@@ -37,7 +37,7 @@ balance:
 
 # MCP Servers
 mcpServers:
-  browserbase:
+  kolbert-ai-browser:
     type: streamable-http
     url: https://stagehand-mcp-server-production.up.railway.app/mcp
     timeout: 600000

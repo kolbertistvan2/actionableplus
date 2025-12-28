@@ -96,6 +96,7 @@ export function useBrowserbaseDetection() {
     const browserbasePatterns = [
       'stagehand',
       'browserbase',
+      'kolbert-ai-browser',
       'session_create',
       'session_close',
       'navigate',
