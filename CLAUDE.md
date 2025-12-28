@@ -4,7 +4,7 @@
 
 E-commerce consulting app with specialized AI agents (based on LibreChat).
 
-**Current Date:** 2025-12-27
+**Current Date:** 2025-12-28
 
 ## Tech Stack
 
@@ -13,7 +13,7 @@ E-commerce consulting app with specialized AI agents (based on LibreChat).
   - Anthropic Claude (primary)
   - Google Gemini
   - OpenAI
-- **Deployment:** Railway (planned)
+- **Deployment:** Railway (production: https://app.actionableplus.com)
 - **Local Dev:** Docker Desktop
 
 ## Latest AI Models (Dec 2025)
@@ -81,7 +81,7 @@ docker-compose down && docker-compose up -d
 ## URLs
 
 - **Local:** http://localhost:3080
-- **Production:** https://actionableplus-production.up.railway.app
+- **Production:** https://app.actionableplus.com
 
 ## Railway Deployment
 
@@ -111,8 +111,8 @@ MCP_INIT_TIMEOUT_MS=120000
 
 # App
 APP_TITLE=Actionable+
-DOMAIN_CLIENT=https://actionableplus-production.up.railway.app
-DOMAIN_SERVER=https://actionableplus-production.up.railway.app
+DOMAIN_CLIENT=https://app.actionableplus.com
+DOMAIN_SERVER=https://app.actionableplus.com
 ```
 
 ### Important: .dockerignore
@@ -195,9 +195,9 @@ mcpServers:
     timeout: 120000
 ```
 
-## Gemini Image Generation (Completed)
+## Gemini Image Generation & Editing (Completed)
 
-Image generation for the Creative Designer agent is implemented via a custom MCP server.
+Image generation and editing is implemented via a custom MCP server.
 
 ### Why MCP Server?
 
@@ -205,17 +205,36 @@ The LangChain JS package (`@langchain/google-genai` v0.2.18) does NOT support th
 
 **Solution:** Custom MCP server that uses `@google/genai` SDK directly, bypassing LangChain.
 
+### Available Tools
+
+| Tool | Purpose |
+|------|---------|
+| `generate_image` | Generate images from text prompts |
+| `edit_image` | Edit/enhance uploaded images with AI instructions |
+| `analyze_image` | Analyze images and return text description |
+
 ### Architecture
 
 ```
-Creative Designer Agent (gemini-3-pro-preview)
-    ↓ calls generate_image tool
+Agent (gemini-3-pro-preview)
+    ↓ calls generate_image / edit_image / analyze_image
 gemini-image-mcp server (Railway US East)
     ↓ uses @google/genai SDK
 Google Gemini API (gemini-3-pro-image-preview)
-    ↓ returns base64 image
-Agent displays image in chat
+    ↓ returns base64 image or text analysis
+Agent displays result in chat
 ```
+
+### Image Editing Flow
+
+When user uploads an image:
+1. Image stored at `/images/{userId}/{fileId}.png`
+2. `fileContext` injection adds public URL to agent context
+3. Agent calls `edit_image` with `https://app.actionableplus.com/images/...` URL
+4. MCP server downloads image, converts to base64, sends to Gemini
+5. Gemini returns edited image
+
+**Key file:** `api/server/controllers/agents/client.js` - `addFileContextToMessage()` override
 
 ### Key Components
 
@@ -223,14 +242,16 @@ Agent displays image in chat
 |-----------|----------|---------|
 | gemini-image-mcp | https://github.com/kolbertistvan2/gemini-image-mcp | MCP server repo |
 | Railway Service | US East region (required for Gemini image gen) | Hosting |
-| generate_image tool | MCP server | Tool that agents call |
+| fileContext injection | `api/server/controllers/agents/client.js` | Passes uploaded image URLs to agent |
 
 ### Agent Configuration
 
-The Creative Designer agent must:
-1. Use a smart model (e.g., `gemini-3-pro-preview`) that can call tools
-2. Have `gemini-image` MCP tool enabled in Agent Builder
-3. Have instructions that explicitly tell it to use `generate_image` tool
+**IMPORTANT:** In Agent Builder, you must manually enable (checkbox) each MCP tool the agent should use:
+- `generate_image` - for creating new images
+- `edit_image` - for editing uploaded images
+- `analyze_image` - for analyzing uploaded images
+
+The agent won't use tools that aren't checked, even if the MCP server provides them.
 
 ### Important: Region Restriction
 

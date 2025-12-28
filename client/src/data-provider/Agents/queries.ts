@@ -51,10 +51,12 @@ export const useListAgentsQuery = <TData = t.AgentListResponse>(
       //   return res.data.sort((a, b) => a.created_at - b.created_at);
       // },
       staleTime: 1000 * 60 * 5, // 5 minutes - prevents refetch on every navigation
+      cacheTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: false,
       retry: false,
+      keepPreviousData: true, // Keep showing previous data while refetching
       ...config,
       enabled: config?.enabled !== undefined ? config.enabled && enabled : enabled,
     },
