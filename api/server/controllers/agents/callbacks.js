@@ -18,13 +18,22 @@ const { saveBase64Image } = require('~/server/services/Files/process');
 
 class ModelEndHandler {
   /**
-   * @param {Array<UsageMetadata>} collectedUsage
+   * @param {Object} options
+   * @param {Array<UsageMetadata>} options.collectedUsage
+   * @param {ServerRequest} [options.req] - Request object for image processing
+   * @param {ServerResponse} [options.res] - Response object for streaming attachments
+   * @param {ArtifactPromises} [options.artifactPromises] - Array to collect image attachments
+   * @param {string | null} [options.streamId] - Stream ID for resumable mode
    */
-  constructor(collectedUsage) {
+  constructor({ collectedUsage, req, res, artifactPromises, streamId }) {
     if (!Array.isArray(collectedUsage)) {
       throw new Error('collectedUsage must be an array');
     }
     this.collectedUsage = collectedUsage;
+    this.req = req;
+    this.res = res;
+    this.artifactPromises = artifactPromises;
+    this.streamId = streamId;
   }
 
   finalize(errorMessage) {
@@ -92,10 +101,57 @@ class ModelEndHandler {
       }
 
       this.collectedUsage.push(usage);
+
+      // Check for image content in the response (works for both streaming and non-streaming)
+      const content = data.output?.content;
+      if (Array.isArray(content) && this.req && this.artifactPromises) {
+        const imageContent = [];
+
+        for (const part of content) {
+          if (part.type === 'image_url' && part.image_url?.url) {
+            imageContent.push(part);
+          } else if (part.inlineData?.data && part.inlineData?.mimeType) {
+            // Handle Gemini native inlineData format
+            const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            imageContent.push({ type: 'image_url', image_url: { url } });
+          }
+        }
+
+        // Process and save images
+        if (imageContent.length > 0) {
+          for (let i = 0; i < imageContent.length; i++) {
+            const part = imageContent[i];
+            const { url } = part.image_url;
+            this.artifactPromises.push(
+              (async () => {
+                const filename = `gemini_image_${nanoid()}`;
+                const file = await saveBase64Image(url, {
+                  req: this.req,
+                  filename,
+                  endpoint: agentContext.provider,
+                  context: FileContext.image_generation,
+                });
+                const fileMetadata = Object.assign(file, {
+                  messageId: metadata.run_id,
+                  conversationId: metadata.thread_id,
+                });
+                if (this.streamId || this.res?.headersSent) {
+                  writeAttachment(this.res, this.streamId, fileMetadata);
+                }
+                return fileMetadata;
+              })().catch((error) => {
+                logger.error('Error processing Gemini image content:', error);
+                return null;
+              }),
+            );
+          }
+        }
+      }
+
       if (!streamingDisabled) {
         return this.finalize(errorMessage);
       }
-      if (!data.output.content) {
+      if (!content) {
         return this.finalize(errorMessage);
       }
       const stepKey = graph.getStepKey(metadata);
@@ -109,7 +165,6 @@ class ModelEndHandler {
         });
       }
       const stepId = graph.getStepIdByKey(stepKey);
-      const content = data.output.content;
       if (typeof content === 'string') {
         await graph.dispatchMessageDelta(stepId, {
           content: [
@@ -119,10 +174,12 @@ class ModelEndHandler {
             },
           ],
         });
-      } else if (content.every((c) => c.type?.startsWith('text'))) {
-        await graph.dispatchMessageDelta(stepId, {
-          content,
-        });
+      } else if (Array.isArray(content)) {
+        // Dispatch only text content for non-streaming mode (images already processed above)
+        const textContent = content.filter((c) => c.type?.startsWith('text'));
+        if (textContent.length > 0) {
+          await graph.dispatchMessageDelta(stepId, { content: textContent });
+        }
       }
     } catch (error) {
       logger.error('Error handling model end event:', error);
@@ -161,19 +218,23 @@ function emitEvent(res, streamId, eventData) {
 /**
  * Get default handlers for stream events.
  * @param {Object} options - The options object.
+ * @param {ServerRequest} options.req - The server request object.
  * @param {ServerResponse} options.res - The server response object.
  * @param {ContentAggregator} options.aggregateContent - Content aggregator function.
  * @param {ToolEndCallback} options.toolEndCallback - Callback to use when tool ends.
  * @param {Array<UsageMetadata>} options.collectedUsage - The list of collected usage metadata.
+ * @param {ArtifactPromises} options.artifactPromises - Array to collect file attachments.
  * @param {string | null} [options.streamId] - The stream ID for resumable mode, or null for standard mode.
  * @returns {Record<string, t.EventHandler>} The default handlers.
  * @throws {Error} If the request is not found.
  */
 function getDefaultHandlers({
+  req,
   res,
   aggregateContent,
   toolEndCallback,
   collectedUsage,
+  artifactPromises,
   streamId = null,
 }) {
   if (!res || !aggregateContent) {
@@ -182,7 +243,13 @@ function getDefaultHandlers({
     );
   }
   const handlers = {
-    [GraphEvents.CHAT_MODEL_END]: new ModelEndHandler(collectedUsage),
+    [GraphEvents.CHAT_MODEL_END]: new ModelEndHandler({
+      collectedUsage,
+      req,
+      res,
+      artifactPromises,
+      streamId,
+    }),
     [GraphEvents.TOOL_END]: new ToolEndHandler(toolEndCallback, logger),
     [GraphEvents.CHAT_MODEL_STREAM]: new ChatModelStreamHandler(),
     [GraphEvents.ON_RUN_STEP]: {
