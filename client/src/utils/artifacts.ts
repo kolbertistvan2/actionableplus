@@ -190,6 +190,35 @@ export const sharedFiles = {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Document</title>
         <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+        <style>
+          /* Base layout for artifacts - prevents chart overlap */
+          html, body, #root {
+            min-height: 100%;
+            width: 100%;
+          }
+          #root {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 1.5rem;
+          }
+          /* Ensure recharts containers have proper dimensions */
+          .recharts-wrapper {
+            max-width: 100% !important;
+          }
+          .recharts-responsive-container {
+            min-height: 250px;
+          }
+          /* Fix for multiple charts - ensure they stack vertically */
+          #root > div {
+            width: 100%;
+          }
+          /* Prevent SVG overflow */
+          svg {
+            max-width: 100%;
+            height: auto;
+          }
+        </style>
       </head>
       <body>
         <div id="root"></div>
