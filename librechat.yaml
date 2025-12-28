@@ -1,6 +1,10 @@
 version: 1.2.1
 cache: true
 
+# Interface settings
+interface:
+  bookmarks: false
+
 # Model configuration
 # - enforce: false = users can use any model, not just specs
 # - prioritize: false = users can switch between endpoints freely
@@ -22,6 +26,15 @@ modelSpecs:
       preset:
         endpoint: agents
         agent_id: agent_Ln1Ud-C92pXV50UW_Qo0Z
+
+# Token Balance System
+balance:
+  enabled: true
+  startBalance: 50000        # ~$0.05 induló kredit új felhasználóknak
+  autoRefillEnabled: true
+  refillIntervalValue: 1
+  refillIntervalUnit: "days"
+  refillAmount: 20000        # Napi ~$0.02 feltöltés
 
 # MCP Browser Automation (Browserbase/Stagehand)
 mcpServers:
