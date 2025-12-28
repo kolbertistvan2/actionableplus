@@ -31,7 +31,7 @@ const BrowserToggleButton = memo(function BrowserToggleButton({
 
   return (
     <TooltipAnchor
-      description={localize('com_ui_browser_preview') ?? 'Browser preview'}
+      description="Kolbert AI Browser View"
       id="browser-toggle"
       disabled={disabled}
       render={
