@@ -35,7 +35,7 @@ balance:
   refillIntervalUnit: "days"
   refillAmount: 20000        # Napi ~$0.02 feltöltés
 
-# MCP Browser Automation (Browserbase/Stagehand)
+# MCP Servers
 mcpServers:
   browserbase:
     type: streamable-http
@@ -45,3 +45,11 @@ mcpServers:
     requiresOAuth: false
     title: "Browser Automation"
     description: "AI-powered browser control with Stagehand"
+  gemini-image:
+    type: streamable-http
+    url: https://gemini-image-mcp-production.up.railway.app/mcp
+    timeout: 120000
+    initTimeout: 30000
+    requiresOAuth: false
+    title: "Image Generation"
+    description: "Generate product images, ads, and banners with Gemini AI"
