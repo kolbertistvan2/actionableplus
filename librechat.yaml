@@ -33,6 +33,9 @@ endpoints:
     recursionLimit: 50
     # Maximum recursion limit allowed (default: 25)
     maxRecursionLimit: 100
+  google:
+    # Enable native Google Search Grounding for Gemini models
+    web_search: true
 
 # Token Balance System
 balance:
