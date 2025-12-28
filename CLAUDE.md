@@ -241,3 +241,29 @@ Gemini image generation is NOT available in all countries. The MCP server must r
 ```
 GOOGLE_KEY=<gemini-api-key>
 ```
+
+## File Storage Configuration
+
+### TTL (Time-To-Live)
+
+Uploaded files have a **30 day TTL** by default. After 30 days, MongoDB automatically deletes the file record (physical file remains on disk).
+
+**Configuration:** `api/models/File.js` line 74
+
+```javascript
+expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days TTL
+```
+
+**TTL is disabled when:**
+- File is associated with a message (`updateFileUsage()` call)
+- File is used in agent/assistant context
+- File is created with `disableTTL: true` flag
+
+### Storage Volumes
+
+```yaml
+# docker-compose.yml
+volumes:
+  - ./images:/app/client/public/images
+  - ./uploads:/app/uploads
+```

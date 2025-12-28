@@ -71,7 +71,7 @@ const getToolFilesByIds = async (fileIds, toolResourceSet) => {
 const createFile = async (data, disableTTL) => {
   const fileData = {
     ...data,
-    expiresAt: new Date(Date.now() + 3600 * 1000),
+    expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days TTL
   };
 
   if (disableTTL) {
