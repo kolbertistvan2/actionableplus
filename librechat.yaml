@@ -29,7 +29,7 @@ modelSpecs:
 
 # Token Balance System
 balance:
-  enabled: true
+  enabled: false
   startBalance: 50000        # ~$0.05 induló kredit új felhasználóknak
   autoRefillEnabled: true
   refillIntervalValue: 1
