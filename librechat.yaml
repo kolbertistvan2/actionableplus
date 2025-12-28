@@ -26,6 +26,14 @@ modelSpecs:
         endpoint: agents
         agent_id: agent_vYtlBb9GyT3xEnGcSWgG9
 
+# Endpoint configurations
+endpoints:
+  agents:
+    # Recursion limit for agent tool calls (default: 25)
+    recursionLimit: 50
+    # Maximum recursion limit allowed (default: 25)
+    maxRecursionLimit: 100
+
 # Token Balance System
 balance:
   enabled: false
