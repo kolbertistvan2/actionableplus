@@ -25,7 +25,7 @@ modelSpecs:
       description: "E-commerce consulting agent with browser automation"
       preset:
         endpoint: agents
-        agent_id: agent_Ln1Ud-C92pXV50UW_Qo0Z
+        agent_id: agent_vYtlBb9GyT3xEnGcSWgG9
 
 # Token Balance System
 balance:
