@@ -170,6 +170,12 @@ export function getGoogleConfig(
   /** Used only for Safety Settings */
   llmConfig.safetySettings = getSafetySettings(llmConfig.model);
 
+  /** Auto-enable image generation for image models (e.g., gemini-3-pro-image-preview) */
+  const modelName = llmConfig.model?.toLowerCase() ?? '';
+  if (modelName.includes('image') && !llmConfig.responseModalities) {
+    llmConfig.responseModalities = ['TEXT', 'IMAGE'];
+  }
+
   let provider;
 
   if (project_id) {
