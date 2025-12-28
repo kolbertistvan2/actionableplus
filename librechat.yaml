@@ -43,8 +43,10 @@ mcpServers:
     timeout: 600000
     initTimeout: 30000
     requiresOAuth: false
-    title: "Browser Automation"
-    description: "AI-powered browser control with Stagehand"
+    title: "Kolbert AI Browser"
+    description: "AI-powered browser control"
+    headers:
+      X-Conversation-Id: "{{LIBRECHAT_BODY_CONVERSATIONID}}"
   gemini-image:
     type: streamable-http
     url: https://gemini-image-mcp-production.up.railway.app/mcp
