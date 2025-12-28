@@ -223,7 +223,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           : 'sm:mb-10',
       )}
     >
-      <div className="relative flex h-full flex-1 items-stretch md:flex-col">
+      <div className="relative flex h-full flex-1 flex-col">
         {/* Browser Thumbnail - Manus-style sticky card above chat input */}
         {activeUIResource && !isBrowserPanelOpen && (
           <div className="mb-3 w-full">

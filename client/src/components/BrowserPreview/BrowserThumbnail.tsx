@@ -49,11 +49,11 @@ export function BrowserThumbnail({ resource, isActive, onClick, conversationId }
 
   return (
     <div
-      className="group inline-flex cursor-pointer items-stretch overflow-hidden rounded-2xl border border-border-light bg-surface-primary shadow-sm transition-all hover:shadow-md hover:border-border-medium"
+      className="group flex w-full cursor-pointer items-stretch overflow-hidden rounded-2xl border border-border-light bg-surface-primary shadow-sm transition-all hover:shadow-md hover:border-border-medium sm:inline-flex sm:w-auto"
       onClick={onClick}
     >
       {/* Preview thumbnail - left side */}
-      <div className="relative h-[72px] w-[100px] flex-shrink-0 overflow-hidden bg-surface-tertiary">
+      <div className="relative h-[72px] w-[80px] flex-shrink-0 overflow-hidden bg-surface-tertiary sm:w-[100px]">
         {iframeUrl ? (
           <div
             className="pointer-events-none absolute inset-0 origin-top-left"
@@ -76,7 +76,7 @@ export function BrowserThumbnail({ resource, isActive, onClick, conversationId }
       </div>
 
       {/* Content - right side */}
-      <div className="flex flex-col justify-center gap-0.5 px-3 py-2">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-3 py-2">
         {/* Status text */}
         <div className="flex items-center gap-2">
           {isActive && (
@@ -90,12 +90,12 @@ export function BrowserThumbnail({ resource, isActive, onClick, conversationId }
         {/* URL/domain with globe icon */}
         <div className="flex items-center gap-1.5 text-xs text-text-tertiary">
           <Globe className="h-3 w-3 flex-shrink-0" />
-          <span className="line-clamp-1 max-w-[180px]">{domain}</span>
+          <span className="truncate">{domain}</span>
         </div>
       </div>
 
       {/* Expand indicator on hover */}
-      <div className="flex items-center px-3 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex flex-shrink-0 items-center px-3 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
         <Maximize2 className="h-4 w-4" />
       </div>
     </div>
