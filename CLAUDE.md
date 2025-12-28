@@ -4,7 +4,7 @@
 
 E-commerce consulting app with specialized AI agents (based on LibreChat).
 
-**Current Date:** 2025-12-29
+**Current Date:** {{current_date}}
 
 ## Tech Stack
 

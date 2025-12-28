@@ -3,7 +3,7 @@ import { useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 import { TextareaAutosize } from '@librechat/client';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { Constants, isAssistantsEndpoint, isAgentsEndpoint } from 'librechat-data-provider';
+import { Constants, isAssistantsEndpoint } from 'librechat-data-provider';
 import { BrowserThumbnail } from '~/components/BrowserPreview';
 import {
   useChatContext,
@@ -366,7 +366,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                 disabled={disableInputs}
               />
               <BadgeRow
-                showEphemeralBadges={!isAgentsEndpoint(endpoint) && !isAssistantsEndpoint(endpoint)}
+                showEphemeralBadges={!isAssistantsEndpoint(endpoint)}
                 isSubmitting={isSubmitting}
                 conversationId={conversationId}
                 onChange={setBadges}
