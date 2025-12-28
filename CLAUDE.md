@@ -208,11 +208,11 @@ The LangChain JS package (`@langchain/google-genai` v0.2.18) does NOT support th
 ### Architecture
 
 ```
-Creative Designer Agent (gemini-2.5-pro)
+Creative Designer Agent (gemini-3-pro-preview)
     ↓ calls generate_image tool
 gemini-image-mcp server (Railway US East)
     ↓ uses @google/genai SDK
-Google Gemini API (gemini-2.0-flash-exp)
+Google Gemini API (gemini-3-pro-image-preview)
     ↓ returns base64 image
 Agent displays image in chat
 ```
@@ -228,7 +228,7 @@ Agent displays image in chat
 ### Agent Configuration
 
 The Creative Designer agent must:
-1. Use a smart model (e.g., `gemini-2.5-pro`) that can call tools
+1. Use a smart model (e.g., `gemini-3-pro-preview`) that can call tools
 2. Have `gemini-image` MCP tool enabled in Agent Builder
 3. Have instructions that explicitly tell it to use `generate_image` tool
 
