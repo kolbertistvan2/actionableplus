@@ -302,6 +302,35 @@ class AgentClient extends BaseClient {
   }
 
   /**
+   * Override to add image URLs to fileContext for MCP tool access
+   * @param {TMessage} message - The message to add context to
+   * @param {MongoFile[]} attachments - Array of file attachments
+   * @returns {Promise<void>}
+   */
+  async addFileContextToMessage(message, attachments) {
+    // Call parent method first
+    await super.addFileContextToMessage(message, attachments);
+
+    // Add image URLs to fileContext so MCP tools can access them
+    const imageAttachments = attachments.filter((f) => f.type?.startsWith('image/'));
+    if (imageAttachments.length > 0) {
+      const imageUrls = imageAttachments
+        .filter((f) => f.filepath)
+        .map((f) => {
+          // Build public URL from filepath
+          const baseUrl = process.env.DOMAIN_SERVER || process.env.DOMAIN_CLIENT || '';
+          const publicUrl = f.filepath.startsWith('http') ? f.filepath : `${baseUrl}${f.filepath}`;
+          return `- ${f.filename}: ${publicUrl}`;
+        });
+
+      if (imageUrls.length > 0) {
+        const imageContext = `\n\nUploaded image URLs (use these with edit_image/analyze_image tools):\n${imageUrls.join('\n')}`;
+        message.fileContext = (message.fileContext || '') + imageContext;
+      }
+    }
+  }
+
+  /**
    *
    * @param {TMessage} message
    * @param {Array<MongoFile>} attachments
