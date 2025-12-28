@@ -20,9 +20,8 @@ modelSpecs:
     - openAI
   list:
     - name: ecommerce-consultant
-      label: Ecommerce Consultant v0.1
+      label: Ecommerce Consultant v0.2
       default: true
-      description: "E-commerce consulting agent with browser automation"
       preset:
         endpoint: agents
         agent_id: agent_vYtlBb9GyT3xEnGcSWgG9
