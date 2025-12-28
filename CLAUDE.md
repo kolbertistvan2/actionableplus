@@ -4,7 +4,7 @@
 
 E-commerce consulting app with specialized AI agents (based on LibreChat).
 
-**Current Date:** 2025-12-28
+**Current Date:** 2025-12-29
 
 ## Tech Stack
 
@@ -186,19 +186,40 @@ Browser automation is fully integrated with Stagehand MCP:
 | currentBrowsedUrlFamily | `client/src/store/browserSession.ts` | Recoil state for URL |
 | ToolCall (navigate) | `client/src/components/Chat/Messages/Content/ToolCall.tsx` | Extracts URL from navigate args |
 
+### Browser Preview UX (Dec 2025)
+
+- **BrowserToggleButton:** Globe icon in chat input, always visible when browser session exists
+- **Pulsing green indicator:** Shows when browser is actively working
+- **Auto-dismiss:** Thumbnail hides 5 seconds after browsing completes
+- **X button:** Manual dismiss on hover
+
 ### librechat.yaml MCP Config
 
 ```yaml
 mcpServers:
-  browserbase:
+  kolbert-ai-browser:  # Renamed from browserbase
     type: streamable-http
     url: https://stagehand-mcp-server-production.up.railway.app/mcp
     timeout: 600000
+    title: "Kolbert AI Browser"
   gemini-image:
     type: streamable-http
     url: https://gemini-image-mcp-production.up.railway.app/mcp
     timeout: 120000
+
+endpoints:
+  agents:
+    recursionLimit: 50      # Default: 25
+    maxRecursionLimit: 100  # Max allowed
 ```
+
+### Stagehand MCP Server Config
+
+**Model:** `google/gemini-3-flash-preview`
+
+**System Prompt:** Custom prompt instructs AI to always click search buttons explicitly (not Enter key) for reliable form submission.
+
+**Config file:** `/Users/kolbert/Dev/stagehand-mcp-server/src/config.ts`
 
 ## Gemini Image Generation & Editing (Completed)
 
