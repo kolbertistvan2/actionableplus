@@ -21,10 +21,38 @@ const FavoriteItemSkeleton = () => (
   </div>
 );
 
-const MarketplaceSkeleton = () => (
-  <div className="flex w-full items-center rounded-lg px-3 py-2">
-    <Skeleton className="mr-2 h-5 w-5" />
-    <Skeleton className="h-4 w-28" />
+interface AgentMarketplaceButtonProps {
+  marketplaceRef: React.RefObject<HTMLDivElement>;
+  label: string;
+  handleAgentMarketplace: () => void;
+}
+
+const AgentMarketplaceButton = ({
+  marketplaceRef,
+  label,
+  handleAgentMarketplace,
+}: AgentMarketplaceButtonProps) => (
+  <div
+    ref={marketplaceRef}
+    role="button"
+    tabIndex={0}
+    aria-label={label}
+    className="group relative flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm text-text-primary hover:bg-surface-active-alt"
+    onClick={handleAgentMarketplace}
+    onKeyDown={(e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleAgentMarketplace();
+      }
+    }}
+    data-testid="nav-agents-marketplace-button"
+  >
+    <div className="flex flex-1 items-center truncate pr-6">
+      <div className="mr-2 h-5 w-5">
+        <LayoutGrid className="h-5 w-5 text-text-primary" />
+      </div>
+      <span className="truncate">{label}</span>
+    </div>
   </div>
 );
 
@@ -253,7 +281,14 @@ export default function FavoritesList({
     return (
       <div className="mb-2 flex flex-col pb-2">
         <div className="mt-1 flex flex-col gap-1">
-          {showAgentMarketplace && <MarketplaceSkeleton />}
+          {/* Show Agent Marketplace immediately even during favorites loading */}
+          {showAgentMarketplace && (
+            <AgentMarketplaceButton
+              marketplaceRef={marketplaceRef}
+              label={localize('com_agents_marketplace')}
+              handleAgentMarketplace={handleAgentMarketplace}
+            />
+          )}
           <FavoriteItemSkeleton />
         </div>
       </div>
@@ -263,43 +298,23 @@ export default function FavoritesList({
   return (
     <div className="mb-2 flex flex-col">
       <div ref={listContainerRef} className="mt-1 flex flex-col gap-1">
-        {/* Show skeletons for ALL items while agents are still loading */}
+        {/* Agent Marketplace button - render immediately, doesn't depend on agents loading */}
+        {showAgentMarketplace && (
+          <AgentMarketplaceButton
+            marketplaceRef={marketplaceRef}
+            label={localize('com_agents_marketplace')}
+            handleAgentMarketplace={handleAgentMarketplace}
+          />
+        )}
+        {/* Show skeletons for favorite items while agents are still loading */}
         {isAgentsLoading ? (
           <>
-            {/* Marketplace skeleton */}
-            {showAgentMarketplace && <MarketplaceSkeleton />}
-            {/* Favorite items skeletons */}
             {safeFavorites.map((_, index) => (
               <FavoriteItemSkeleton key={`skeleton-${index}`} />
             ))}
           </>
         ) : (
           <>
-            {/* Agent Marketplace button */}
-            {showAgentMarketplace && (
-              <div
-                ref={marketplaceRef}
-                role="button"
-                tabIndex={0}
-                aria-label={localize('com_agents_marketplace')}
-                className="group relative flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm text-text-primary hover:bg-surface-active-alt"
-                onClick={handleAgentMarketplace}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleAgentMarketplace();
-                  }
-                }}
-                data-testid="nav-agents-marketplace-button"
-              >
-                <div className="flex flex-1 items-center truncate pr-6">
-                  <div className="mr-2 h-5 w-5">
-                    <LayoutGrid className="h-5 w-5 text-text-primary" />
-                  </div>
-                  <span className="truncate">{localize('com_agents_marketplace')}</span>
-                </div>
-              </div>
-            )}
             {safeFavorites.map((fav, index) => {
               if (fav.agentId) {
                 const agent = combinedAgentsMap?.[fav.agentId];
