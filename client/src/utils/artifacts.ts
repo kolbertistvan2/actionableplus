@@ -182,6 +182,7 @@ export const sharedFiles = {
   '/components/ui/toggle.tsx': shadcnComponents.toggle,
   '/components/ui/tooltip.tsx': shadcnComponents.tooltip,
   '/components/ui/use-toast.tsx': shadcnComponents.useToast,
+  '/components/ui/chart.tsx': shadcnComponents.chart,
   '/public/index.html': dedent`
     <!DOCTYPE html>
     <html lang="en">
@@ -190,43 +191,134 @@ export const sharedFiles = {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Document</title>
         <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-          /* Base layout for artifacts - prevents chart overlap */
+          /* Professional Consulting Style - ActionablePlus */
+          :root {
+            --chart-1: 220 70% 50%;
+            --chart-2: 160 60% 45%;
+            --chart-3: 30 80% 55%;
+            --chart-4: 280 65% 60%;
+            --chart-5: 340 75% 55%;
+          }
+
+          /* Base layout for artifacts */
           html, body, #root {
             min-height: 100%;
             width: 100%;
           }
+
+          body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #FAFAFA;
+          }
+
           #root {
             display: flex;
             flex-direction: column;
-            padding: 1rem;
+            padding: 1.5rem;
             gap: 1.5rem;
           }
+
           /* Text wrapping and overflow handling */
           body, #root, #root * {
             word-wrap: break-word;
             overflow-wrap: break-word;
           }
-          /* Prose-like text styling */
+
+          /* Professional typography */
+          h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: #111827;
+            letter-spacing: -0.025em;
+          }
+
           p, li, td, th, span, div {
             max-width: 100%;
             line-height: 1.6;
+            color: #374151;
           }
-          /* Ensure recharts containers have proper dimensions */
+
+          /* Recharts professional styling */
           .recharts-wrapper {
             max-width: 100% !important;
+            overflow: visible;
           }
+
           .recharts-responsive-container {
-            min-height: 250px;
+            min-height: 300px;
           }
+
+          .recharts-cartesian-grid line {
+            stroke: #E5E7EB;
+          }
+
+          /* Prevent label overflow - proportional font sizes */
+          .recharts-text,
+          .recharts-cartesian-axis-tick-value {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 10px !important;
+            fill: #6B7280;
+          }
+
+          .recharts-xAxis .recharts-cartesian-axis-tick-value {
+            font-size: 9px !important;
+          }
+
+          .recharts-yAxis .recharts-cartesian-axis-tick-value {
+            font-size: 10px !important;
+          }
+
+          /* Truncate long labels */
+          .recharts-cartesian-axis-tick text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .recharts-legend-item-text {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 11px !important;
+            color: #4B5563 !important;
+          }
+
+          .recharts-tooltip-wrapper {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 12px;
+          }
+
+          /* Label sizing */
+          .recharts-label {
+            font-size: 10px !important;
+            fill: #6B7280;
+          }
+
+          /* Pie chart labels */
+          .recharts-pie-label-text {
+            font-size: 10px !important;
+            fill: #374151;
+          }
+
           /* Fix for multiple charts - ensure they stack vertically */
           #root > div {
             width: 100%;
           }
+
           /* Prevent SVG overflow */
           svg {
             max-width: 100%;
             height: auto;
+          }
+
+          /* Card-like containers */
+          .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #E5E7EB;
           }
         </style>
       </head>

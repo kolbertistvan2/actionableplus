@@ -3045,6 +3045,409 @@ function useToast() {
 export { useToast, toast }
 `;
 
+// Professional Chart Components - Consulting-grade visualizations
+// Clean, minimal, data-focused design following ActionablePlus visual identity
+export const chart = `import * as React from "react"
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  LineChart as RechartsLineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  AreaChart as RechartsAreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
+import { cn } from "../../lib/utils"
+
+// ActionablePlus professional color palette
+// Uses CSS variables from the design system for theme compatibility
+export const CHART_COLORS = [
+  "hsl(var(--chart-1, 220 70% 50%))",   // Primary blue
+  "hsl(var(--chart-2, 160 60% 45%))",   // Teal/green
+  "hsl(var(--chart-3, 30 80% 55%))",    // Orange
+  "hsl(var(--chart-4, 280 65% 60%))",   // Purple
+  "hsl(var(--chart-5, 340 75% 55%))",   // Pink/red
+  "#10b981",  // Green (growth/positive)
+  "#6366f1",  // Indigo (alternative)
+  "#f59e0b",  // Amber (warning)
+]
+
+// Fallback solid colors for environments without CSS variables
+export const CHART_COLORS_SOLID = [
+  "#3b82f6",  // Blue
+  "#10b981",  // Green
+  "#f97316",  // Orange
+  "#8b5cf6",  // Purple
+  "#ec4899",  // Pink
+  "#14b8a6",  // Teal
+  "#6366f1",  // Indigo
+  "#f59e0b",  // Amber
+]
+
+// Shared chart configuration - professional consulting style
+// Inspired by PwC/McKinsey consulting dashboards
+const chartConfig = {
+  style: {
+    fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+    fontSize: 12,
+  },
+  axis: {
+    stroke: "#E5E7EB",      // Subtle axis lines
+    tickLine: false,
+    axisLine: { stroke: "#E5E7EB" },
+    tick: { fill: "#6B7280", fontSize: 11 },
+  },
+  grid: {
+    stroke: "#E5E7EB",
+    strokeDasharray: "3 3",  // Dashed grid for elegant look
+    vertical: false,         // Horizontal lines only - cleaner
+  },
+  tooltip: {
+    contentStyle: {
+      backgroundColor: "rgba(255, 255, 255, 0.98)",
+      border: "1px solid #D1D5DB",
+      borderRadius: 8,
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+      padding: "12px 16px",
+      fontFamily: "Inter, system-ui, sans-serif",
+      backdropFilter: "blur(8px)",
+    },
+    labelStyle: {
+      color: "#111827",
+      fontWeight: 600,
+      fontSize: 12,
+      marginBottom: 8,
+      paddingBottom: 8,
+      borderBottom: "1px solid #E5E7EB",
+    },
+    itemStyle: {
+      color: "#4B5563",
+      padding: "4px 0",
+    },
+  },
+  legend: {
+    wrapperStyle: {
+      paddingTop: 16,
+    },
+    iconType: "circle" as const,
+    iconSize: 8,
+  },
+}
+
+// Chart Container wrapper
+interface ChartContainerProps {
+  children: React.ReactNode
+  className?: string
+  title?: string
+  subtitle?: string
+  height?: number | string
+}
+
+export function ChartContainer({
+  children,
+  className,
+  title,
+  subtitle,
+  height = 350
+}: ChartContainerProps) {
+  return (
+    <div className={cn("w-full", className)}>
+      {(title || subtitle) && (
+        <div className="mb-4">
+          {title && (
+            <h3 className="text-lg font-semibold text-neutral-900 tracking-tight">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="text-sm text-neutral-600 mt-1">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      )}
+      <ResponsiveContainer width="100%" height={height}>
+        {children}
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Professional Bar Chart
+interface BarChartProps {
+  data: any[]
+  dataKey: string | string[]
+  xAxisKey?: string
+  title?: string
+  subtitle?: string
+  height?: number
+  horizontal?: boolean
+  stacked?: boolean
+  showGrid?: boolean
+  showLegend?: boolean
+  className?: string
+  colors?: string[]
+  barSize?: number
+}
+
+export function BarChart({
+  data,
+  dataKey,
+  xAxisKey = "name",
+  title,
+  subtitle,
+  height = 350,
+  horizontal = false,
+  stacked = false,
+  showGrid = true,
+  showLegend = true,
+  className,
+  colors = CHART_COLORS_SOLID,
+  barSize = 32,
+}: BarChartProps) {
+  const dataKeys = Array.isArray(dataKey) ? dataKey : [dataKey]
+
+  return (
+    <ChartContainer title={title} subtitle={subtitle} height={height} className={className}>
+      <RechartsBarChart
+        data={data}
+        layout={horizontal ? "vertical" : "horizontal"}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        {showGrid && (
+          <CartesianGrid
+            {...chartConfig.grid}
+            horizontal={!horizontal}
+            vertical={horizontal}
+          />
+        )}
+        {horizontal ? (
+          <>
+            <XAxis type="number" {...chartConfig.axis} />
+            <YAxis dataKey={xAxisKey} type="category" {...chartConfig.axis} width={100} />
+          </>
+        ) : (
+          <>
+            <XAxis dataKey={xAxisKey} {...chartConfig.axis} />
+            <YAxis {...chartConfig.axis} />
+          </>
+        )}
+        <Tooltip {...chartConfig.tooltip} />
+        {showLegend && dataKeys.length > 1 && <Legend {...chartConfig.legend} />}
+        {dataKeys.map((key, index) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            fill={colors[index % colors.length]}
+            stackId={stacked ? "stack" : undefined}
+            barSize={barSize}
+            radius={horizontal ? [0, 6, 6, 0] : [6, 6, 0, 0]}
+          />
+        ))}
+      </RechartsBarChart>
+    </ChartContainer>
+  )
+}
+
+// Professional Line Chart
+interface LineChartProps {
+  data: any[]
+  dataKey: string | string[]
+  xAxisKey?: string
+  title?: string
+  subtitle?: string
+  height?: number
+  showGrid?: boolean
+  showLegend?: boolean
+  showDots?: boolean
+  curved?: boolean
+  className?: string
+  colors?: string[]
+  strokeWidth?: number
+}
+
+export function LineChart({
+  data,
+  dataKey,
+  xAxisKey = "name",
+  title,
+  subtitle,
+  height = 350,
+  showGrid = true,
+  showLegend = true,
+  showDots = true,
+  curved = true,
+  className,
+  colors = CHART_COLORS_SOLID,
+  strokeWidth = 2,
+}: LineChartProps) {
+  const dataKeys = Array.isArray(dataKey) ? dataKey : [dataKey]
+
+  return (
+    <ChartContainer title={title} subtitle={subtitle} height={height} className={className}>
+      <RechartsLineChart
+        data={data}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        {showGrid && <CartesianGrid {...chartConfig.grid} />}
+        <XAxis dataKey={xAxisKey} {...chartConfig.axis} />
+        <YAxis {...chartConfig.axis} />
+        <Tooltip {...chartConfig.tooltip} />
+        {showLegend && dataKeys.length > 1 && <Legend {...chartConfig.legend} />}
+        {dataKeys.map((key, index) => (
+          <Line
+            key={key}
+            type={curved ? "monotone" : "linear"}
+            dataKey={key}
+            stroke={colors[index % colors.length]}
+            strokeWidth={strokeWidth}
+            dot={showDots ? { r: 4, strokeWidth: 2 } : false}
+            activeDot={{ r: 6, strokeWidth: 2 }}
+          />
+        ))}
+      </RechartsLineChart>
+    </ChartContainer>
+  )
+}
+
+// McKinsey Area Chart
+interface AreaChartProps {
+  data: any[]
+  dataKey: string | string[]
+  xAxisKey?: string
+  title?: string
+  subtitle?: string
+  height?: number
+  showGrid?: boolean
+  showLegend?: boolean
+  stacked?: boolean
+  className?: string
+  colors?: string[]
+  fillOpacity?: number
+}
+
+export function AreaChart({
+  data,
+  dataKey,
+  xAxisKey = "name",
+  title,
+  subtitle,
+  height = 350,
+  showGrid = true,
+  showLegend = true,
+  stacked = false,
+  className,
+  colors = CHART_COLORS_SOLID,
+  fillOpacity = 0.3,
+}: AreaChartProps) {
+  const dataKeys = Array.isArray(dataKey) ? dataKey : [dataKey]
+
+  return (
+    <ChartContainer title={title} subtitle={subtitle} height={height} className={className}>
+      <RechartsAreaChart
+        data={data}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        {showGrid && <CartesianGrid {...chartConfig.grid} />}
+        <XAxis dataKey={xAxisKey} {...chartConfig.axis} />
+        <YAxis {...chartConfig.axis} />
+        <Tooltip {...chartConfig.tooltip} />
+        {showLegend && dataKeys.length > 1 && <Legend {...chartConfig.legend} />}
+        {dataKeys.map((key, index) => (
+          <Area
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={colors[index % colors.length]}
+            fill={colors[index % colors.length]}
+            fillOpacity={fillOpacity}
+            stackId={stacked ? "stack" : undefined}
+            strokeWidth={2}
+          />
+        ))}
+      </RechartsAreaChart>
+    </ChartContainer>
+  )
+}
+
+// Professional Pie/Donut Chart
+interface PieChartProps {
+  data: any[]
+  dataKey?: string
+  nameKey?: string
+  title?: string
+  subtitle?: string
+  height?: number
+  donut?: boolean
+  showLegend?: boolean
+  showLabels?: boolean
+  className?: string
+  colors?: string[]
+}
+
+export function PieChart({
+  data,
+  dataKey = "value",
+  nameKey = "name",
+  title,
+  subtitle,
+  height = 350,
+  donut = false,
+  showLegend = true,
+  showLabels = false,
+  className,
+  colors = CHART_COLORS_SOLID,
+}: PieChartProps) {
+  return (
+    <ChartContainer title={title} subtitle={subtitle} height={height} className={className}>
+      <RechartsPieChart>
+        <Pie
+          data={data}
+          dataKey={dataKey}
+          nameKey={nameKey}
+          cx="50%"
+          cy="50%"
+          innerRadius={donut ? "60%" : 0}
+          outerRadius="80%"
+          paddingAngle={2}
+          label={showLabels ? ({ name, percent }) => \`\${name}: \${(percent * 100).toFixed(0)}%\` : false}
+          labelLine={showLabels}
+        >
+          {data.map((_, index) => (
+            <Cell key={index} fill={colors[index % colors.length]} />
+          ))}
+        </Pie>
+        <Tooltip {...chartConfig.tooltip} />
+        {showLegend && <Legend {...chartConfig.legend} />}
+      </RechartsPieChart>
+    </ChartContainer>
+  )
+}
+
+// Export all for easy access
+export {
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  Bar,
+  Line,
+  Area,
+  Pie,
+  Cell,
+}
+`;
+
 export const shadcnComponents = {
   utils: utils,
   accordian: accordian,
@@ -3085,6 +3488,7 @@ export const shadcnComponents = {
   toggle: toggle,
   tooltip: tooltip,
   useToast: useToast,
+  chart: chart,
 };
 
 export const essentialShadcnComponents = {
