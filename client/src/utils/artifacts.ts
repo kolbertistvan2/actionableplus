@@ -202,6 +202,16 @@ export const sharedFiles = {
             padding: 1rem;
             gap: 1.5rem;
           }
+          /* Text wrapping and overflow handling */
+          body, #root, #root * {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+          }
+          /* Prose-like text styling */
+          p, li, td, th, span, div {
+            max-width: 100%;
+            line-height: 1.6;
+          }
           /* Ensure recharts containers have proper dimensions */
           .recharts-wrapper {
             max-width: 100% !important;
