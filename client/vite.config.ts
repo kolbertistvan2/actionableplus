@@ -9,13 +9,28 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // Get git info at build time
+// Railway provides RAILWAY_GIT_COMMIT_SHA and RAILWAY_GIT_BRANCH at build time
+// https://docs.railway.com/reference/variables
 function getGitInfo() {
+  const railwayCommit = process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7);
+  const railwayBranch = process.env.RAILWAY_GIT_BRANCH;
+
+  // Use Railway env vars if available (Docker build without .git)
+  if (railwayCommit && railwayBranch) {
+    return { commitHash: railwayCommit, branch: railwayBranch };
+  }
+
   try {
+    // Fallback to git command for local development
     const commitHash = execSync('git rev-parse --short HEAD').toString().trim();
     const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
     return { commitHash, branch };
   } catch {
-    return { commitHash: 'unknown', branch: 'unknown' };
+    // Final fallback
+    return {
+      commitHash: railwayCommit || 'dev',
+      branch: railwayBranch || 'local',
+    };
   }
 }
 
