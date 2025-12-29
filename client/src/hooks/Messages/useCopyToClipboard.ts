@@ -35,9 +35,10 @@ function removeArtifactBlocks(text: string): string {
   if (!text) {
     return '';
   }
-  // Match :::artifact{...} with any content until a line that starts with :::
-  // The artifact block can contain code blocks with ``` so we need multiline matching
-  return text.replace(/:::artifact\{[^}]*\}[\s\S]*?^:::\s*$/gm, '').trim();
+  // Match :::artifact{...} until standalone ::: on its own line
+  // \n::: ensures the closing ::: is at start of a new line
+  // (?:\n|$) matches either newline after or end of string
+  return text.replace(/:::artifact\{[^}]*\}[\s\S]*?\n:::\s*(?:\n|$)/g, '').trim();
 }
 
 export default function useCopyToClipboard({
