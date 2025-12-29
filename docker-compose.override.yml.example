@@ -179,3 +179,18 @@
 #      - POSTGRES_DB=postgres
 #    volumes:
 #      - ./postgres:/var/lib/postgresql/data
+
+# # ADD SELF-HOSTED SANDPACK BUNDLER FOR RELIABLE ARTIFACT PREVIEW
+# # Eliminates dependency on codesandbox.io CDN (fixes "Failed to fetch" errors)
+# # See: https://github.com/LibreChat-AI/codesandbox-client
+#   api:
+#     depends_on:
+#       - sandpack
+#     environment:
+#       - SANDPACK_BUNDLER_URL=http://sandpack:80
+#   sandpack:
+#     container_name: sandpack-bundler
+#     image: ghcr.io/librechat-ai/codesandbox-client/bundler:latest
+#     restart: always
+#     ports:
+#       - "3030:80"

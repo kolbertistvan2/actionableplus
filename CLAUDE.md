@@ -314,3 +314,40 @@ volumes:
   - ./images:/app/client/public/images
   - ./uploads:/app/uploads
 ```
+
+## Artifacts System
+
+### Self-hosted Sandpack Bundler
+
+A Sandpack bundler self-hosted változata fut a Dockerben, ami eliminálja a codesandbox.io CDN függőséget és megoldja a "Failed to fetch" hibákat.
+
+**docker-compose.override.yml:**
+```yaml
+services:
+  api:
+    depends_on:
+      - sandpack
+    environment:
+      - SANDPACK_BUNDLER_URL=http://sandpack:80
+
+  sandpack:
+    container_name: sandpack-bundler
+    image: ghcr.io/librechat-ai/codesandbox-client/bundler:latest
+    restart: always
+    ports:
+      - "3030:80"
+```
+
+**Előnyök:**
+- Nincs CDN függőség (megbízható)
+- Gyorsabb (helyi)
+- Telemetria nélküli (LibreChat-AI fork)
+
+**Docs:** https://github.com/LibreChat-AI/codesandbox-client
+
+### Artifact CSS Fix
+
+A `client/src/utils/artifacts.ts` fájlban lévő `/public/index.html` template tartalmaz CSS-t ami megakadályozza a chartok összecsúszását:
+- Flex column layout a `#root`-on
+- Min-height a recharts containereken
+- Gap a komponensek között

@@ -173,11 +173,16 @@ export const ArtifactCodeEditor = function ({
     if (!config) {
       return sharedOptions;
     }
-    return {
+    const bundlerURL = template === 'static' ? config.staticBundlerURL : config.bundlerURL;
+    const baseOptions = {
       ...sharedOptions,
       activeFile: '/' + fileKey,
-      bundlerURL: template === 'static' ? config.staticBundlerURL : config.bundlerURL,
     };
+    // Only include bundlerURL if it's defined, otherwise let Sandpack use its default CDN
+    if (bundlerURL) {
+      return { ...baseOptions, bundlerURL };
+    }
+    return baseOptions;
   }, [config, template, fileKey]);
   const initialReadOnly = (externalReadOnly ?? false) || (isSubmitting ?? false);
   const [readOnly, setReadOnly] = useState(initialReadOnly);

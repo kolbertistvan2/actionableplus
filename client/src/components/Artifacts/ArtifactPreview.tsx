@@ -43,10 +43,15 @@ export const ArtifactPreview = memo(function ({
     if (!startupConfig) {
       return sharedOptions;
     }
-    return {
-      ...sharedOptions,
-      bundlerURL: template === 'static' ? startupConfig.staticBundlerURL : startupConfig.bundlerURL,
-    };
+    const bundlerURL = template === 'static' ? startupConfig.staticBundlerURL : startupConfig.bundlerURL;
+    // Only include bundlerURL if it's defined, otherwise let Sandpack use its default CDN
+    if (bundlerURL) {
+      return {
+        ...sharedOptions,
+        bundlerURL,
+      };
+    }
+    return sharedOptions;
   }, [startupConfig, template]);
 
   if (Object.keys(artifactFiles).length === 0) {
