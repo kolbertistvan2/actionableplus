@@ -141,6 +141,7 @@ const CodeEditor = memo(
         showRunButton={false}
         showLineNumbers={true}
         showInlineErrors={true}
+        wrapContent={true}
         readOnly={readOnly === true}
         extensions={[autocompletion()]}
         extensionsKeymap={Array.from<KeyBinding>(completionKeymap)}
