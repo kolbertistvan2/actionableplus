@@ -9,8 +9,8 @@ import {
   Button,
 } from '@librechat/client';
 import type { Artifact } from '~/common';
-import useArtifactProps from '~/hooks/Artifacts/useArtifactProps';
 import { useCodeState } from '~/Providers/EditorContext';
+import { cleanArtifactContent } from './Code';
 import { useLocalize } from '~/hooks';
 
 type ExportFormat = 'txt' | 'docx' | 'pdf' | 'csv' | 'xlsx';
@@ -120,11 +120,26 @@ function extractTableData(content: string): string[][] {
 }
 
 /**
- * Get base filename without extension
+ * Sanitize a string for use in filenames
+ * Removes special characters and replaces spaces with hyphens
  */
-function getBaseFilename(fileName: string): string {
-  const lastDot = fileName.lastIndexOf('.');
-  return lastDot > 0 ? fileName.slice(0, lastDot) : fileName;
+function sanitizeForFilename(str: string): string {
+  return str
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-')      // Replace spaces with hyphens
+    .replace(/-+/g, '-')       // Collapse multiple hyphens
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Generate export filename in format: {title}-actionableplus-export-{timestamp}
+ * Example: sales-report-actionableplus-export-1703847123
+ */
+function generateExportFilename(title: string): string {
+  const sanitizedTitle = sanitizeForFilename(title) || 'artifact';
+  const timestamp = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+  return `${sanitizedTitle}-actionableplus-export-${timestamp}`;
 }
 
 /**
@@ -356,11 +371,14 @@ const ExportArtifact = ({ artifact }: { artifact: Artifact }) => {
   const { currentCode } = useCodeState();
   const [isExporting, setIsExporting] = useState(false);
   const [exportedFormat, setExportedFormat] = useState<ExportFormat | null>(null);
-  const { fileKey: fileName } = useArtifactProps({ artifact });
 
-  const content = currentCode ?? artifact.content ?? '';
+  // Clean content from code block markers
+  const rawContent = currentCode ?? artifact.content ?? '';
+  const content = cleanArtifactContent(rawContent);
   const hasTable = hasTableContent(content);
-  const baseFilename = getBaseFilename(artifact.title || fileName || 'artifact');
+
+  // Generate proper filename: title-actionableplus-export-timestamp
+  const baseFilename = generateExportFilename(artifact.title || 'artifact');
 
   const handleExport = useCallback(
     async (option: ExportOption) => {
