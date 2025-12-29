@@ -43,7 +43,21 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 // Content type detection
-type ContentType = 'table' | 'code' | 'markdown' | 'text';
+type ContentType = 'table' | 'code' | 'markdown' | 'text' | 'react-dashboard';
+
+interface ExtractedDataset {
+  name: string;
+  data: Record<string, unknown>[];
+  columns: string[];
+}
+
+interface ParsedReactContent {
+  title: string;
+  subtitle?: string;
+  datasets: ExtractedDataset[];
+  metrics: { label: string; value: string }[];
+  comments: string[];
+}
 
 interface ParsedContent {
   type: ContentType;
@@ -51,26 +65,359 @@ interface ParsedContent {
   text: string;
   headings: { level: number; text: string; lineIndex: number }[];
   listItems: { text: string; lineIndex: number }[];
+  reactData?: ParsedReactContent;
 }
 
-// Detect if content is code
-function isCodeContent(content: string): boolean {
-  const codeIndicators = [
-    /^import\s+/m, // import statements
-    /^export\s+/m, // export statements
-    /^const\s+\w+\s*=/m, // const declarations
-    /^let\s+\w+\s*=/m, // let declarations
-    /^function\s+\w+/m, // function declarations
-    /^class\s+\w+/m, // class declarations
-    /<\w+[^>]*>/m, // HTML/JSX tags
-    /^\s*\{[\s\S]*\}\s*$/m, // JSON-like objects
-    /^<!DOCTYPE/i, // HTML doctype
-    /^<html/i, // HTML tag
-    /@import\s+/m, // CSS imports
-    /\.\w+\s*\{/m, // CSS selectors
+/**
+ * Check if content is a React dashboard/chart component
+ */
+function isReactDashboard(content: string, artifactType?: string): boolean {
+  // Check artifact type
+  if (artifactType?.includes('react')) {
+    // Look for dashboard/chart indicators
+    const dashboardIndicators = [
+      /recharts/i,
+      /BarChart|LineChart|PieChart|AreaChart/,
+      /Dashboard/i,
+      /Chart/i,
+      /const\s+\w+Data\s*=/,
+      /const\s+\w+\s*=\s*\[\s*\{/,
+    ];
+    return dashboardIndicators.some((pattern) => pattern.test(content));
+  }
+  return false;
+}
+
+/**
+ * Extract data from React dashboard code
+ * Handles various code structures and formats
+ */
+function parseReactDashboard(content: string): ParsedReactContent {
+  const result: ParsedReactContent = {
+    title: '',
+    subtitle: '',
+    datasets: [],
+    metrics: [],
+    comments: [],
+  };
+
+  // Extract title from component name (various patterns)
+  const componentPatterns = [
+    /export\s+(?:default\s+)?function\s+(\w+)/,
+    /const\s+(\w+)\s*=\s*(?:\([^)]*\)|)\s*=>/,
+    /const\s+(\w+Dashboard|\w+Chart|\w+Report|\w+Analytics)\s*=/,
+    /function\s+(\w+)\s*\(/,
   ];
 
-  return codeIndicators.some((pattern) => pattern.test(content));
+  for (const pattern of componentPatterns) {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      // Convert camelCase/PascalCase to readable title
+      result.title = match[1]
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^\s/, '')
+        .trim();
+      break;
+    }
+  }
+
+  // Extract title from JSX h1/h2/h3 or CardTitle
+  const jsxTitleMatch = content.match(/<(?:h1|h2|h3|CardTitle)[^>]*>([^<]+)</);
+  if (jsxTitleMatch) {
+    result.title = jsxTitleMatch[1].trim();
+  }
+
+  // Extract subtitle from JSX
+  const subtitleMatch = content.match(/<(?:p|CardDescription|span)[^>]*className[^>]*text-(?:gray|muted)[^>]*>([^<]+)</);
+  if (subtitleMatch) {
+    result.subtitle = subtitleMatch[1].trim();
+  }
+
+  // Extract comments (section headers) - filter out noise
+  const commentMatches = content.matchAll(/\/\/\s*(.+)/g);
+  for (const match of commentMatches) {
+    const comment = match[1].trim();
+    // Only include meaningful comments (Hungarian or descriptive)
+    if (
+      comment.length > 5 &&
+      !comment.includes('eslint') &&
+      !comment.includes('@ts') &&
+      !comment.includes('TODO') &&
+      !comment.includes('FIXME') &&
+      !comment.startsWith('import') &&
+      !/^[a-z]+$/.test(comment) // Skip single lowercase words
+    ) {
+      result.comments.push(comment);
+    }
+  }
+
+  // Normalize content: convert tabs to spaces for consistent parsing
+  const normalizedContent = content.replace(/\t/g, '  ');
+
+  // Extract const arrays (datasets) - improved pattern
+  // Matches: const name = [ ... ]; with proper bracket balancing
+  const lines = normalizedContent.split('\n');
+  let inArray = false;
+  let currentVarName = '';
+  let arrayContent = '';
+  let bracketDepth = 0;
+
+  for (const line of lines) {
+    // Start of array declaration - handles tabs and various spacing
+    const arrayStart = line.match(/^[\s\t]*const\s+(\w+)\s*=\s*\[/);
+    if (arrayStart && !inArray) {
+      inArray = true;
+      currentVarName = arrayStart[1];
+      arrayContent = line;
+      bracketDepth = (line.match(/\[/g) || []).length - (line.match(/\]/g) || []).length;
+      continue;
+    }
+
+    if (inArray) {
+      arrayContent += '\n' + line;
+      bracketDepth += (line.match(/\[/g) || []).length;
+      bracketDepth -= (line.match(/\]/g) || []).length;
+
+      // End of array
+      if (bracketDepth <= 0) {
+        inArray = false;
+
+        // Parse the collected array
+        const dataset = parseArrayContent(currentVarName, arrayContent);
+        if (dataset && dataset.data.length > 0) {
+          result.datasets.push(dataset);
+        }
+
+        currentVarName = '';
+        arrayContent = '';
+      }
+    }
+  }
+
+  // Extract KPI/metric values from JSX structure
+  const kpiPatterns = [
+    /<CardTitle[^>]*>([^<]*\$?[\d,.]+[MBK%]?[^<]*)</g,
+    /<Badge[^>]*>([^<]+)</g,
+    />\s*([\d,.]+%?\s*(?:CAGR|növekedés|growth|increase))\s*</gi,
+    />\s*~?([\d,.]+)\s*(Mrd|M|B|ezer|Ft|db|fő)\s*</g,
+  ];
+
+  for (const pattern of kpiPatterns) {
+    const matches = content.matchAll(pattern);
+    for (const match of matches) {
+      const label = (match[1] || '').trim();
+      if (label && label.length < 50) {
+        result.metrics.push({
+          label,
+          value: match[2] || '',
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Parse array content and extract structured data
+ */
+function parseArrayContent(varName: string, arrayContent: string): ExtractedDataset | null {
+  try {
+    // Extract objects from array using balanced bracket matching
+    const objects: Record<string, unknown>[] = [];
+    const columnsSet = new Set<string>();
+
+    // Find all top-level objects in the array
+    let depth = 0;
+    let objectStart = -1;
+
+    for (let i = 0; i < arrayContent.length; i++) {
+      const char = arrayContent[i];
+
+      if (char === '{') {
+        if (depth === 0) {
+          objectStart = i;
+        }
+        depth++;
+      } else if (char === '}') {
+        depth--;
+        if (depth === 0 && objectStart !== -1) {
+          const objectStr = arrayContent.substring(objectStart + 1, i);
+          const obj = parseObjectContent(objectStr);
+
+          if (Object.keys(obj).length > 0) {
+            objects.push(obj);
+            Object.keys(obj).forEach((key) => columnsSet.add(key));
+          }
+          objectStart = -1;
+        }
+      }
+    }
+
+    if (objects.length === 0) {
+      return null;
+    }
+
+    // Create readable dataset name
+    const name = varName
+      .replace(/Data$/, '')
+      .replace(/([A-Z])/g, ' $1')
+      .trim();
+
+    return {
+      name,
+      data: objects,
+      columns: Array.from(columnsSet),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse object content string into key-value pairs
+ * Handles: strings, numbers, booleans, tabs, and various spacing
+ */
+function parseObjectContent(objectStr: string): Record<string, unknown> {
+  const obj: Record<string, unknown> = {};
+
+  // Normalize: replace tabs with spaces
+  const normalized = objectStr.replace(/\t/g, ' ');
+
+  // Match key-value pairs with various value types
+  // Uses [\s\t]* to handle any whitespace including tabs
+  const patterns = [
+    // String values (single or double quotes)
+    /(\w+)[\s\t]*:[\s\t]*'([^'\\]*(?:\\.[^'\\]*)*)'/g,
+    /(\w+)[\s\t]*:[\s\t]*"([^"\\]*(?:\\.[^"\\]*)*)"/g,
+    // Template literals (simplified - just extract the text)
+    /(\w+)[\s\t]*:[\s\t]*`([^`]*)`/g,
+    // Numbers (including negative and decimals) - must come before simple identifiers
+    /(\w+)[\s\t]*:[\s\t]*(-?\d+(?:\.\d+)?)\b/g,
+    // Booleans
+    /(\w+)[\s\t]*:[\s\t]*(true|false)\b/g,
+    // Hex colors (like #3b82f6)
+    /(\w+)[\s\t]*:[\s\t]*'(#[0-9a-fA-F]{3,8})'/g,
+    /(\w+)[\s\t]*:[\s\t]*"(#[0-9a-fA-F]{3,8})"/g,
+  ];
+
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+    const regex = new RegExp(pattern.source, pattern.flags);
+    while ((match = regex.exec(normalized)) !== null) {
+      const key = match[1];
+      let value: unknown = match[2];
+
+      // Type conversion for display
+      if (value === 'true') {
+        value = '✓';
+      } else if (value === 'false') {
+        value = '✗';
+      } else if (/^-?\d+(?:\.\d+)?$/.test(value as string)) {
+        // Format numbers for Hungarian locale display
+        const num = parseFloat(value as string);
+        if (!isNaN(num)) {
+          // Keep original if it looks like a year (2020-2099) or small integer
+          if (num >= 2000 && num <= 2099) {
+            value = String(num);
+          } else if (Number.isInteger(num) && num >= 0 && num <= 100) {
+            value = String(num);
+          } else {
+            value = num.toLocaleString('hu-HU');
+          }
+        }
+      }
+
+      // Don't overwrite existing values (first match wins)
+      if (!(key in obj)) {
+        obj[key] = value;
+      }
+    }
+  }
+
+  return obj;
+}
+
+/**
+ * Get content type from artifact MIME type
+ * Returns explicit type if known, null if detection needed
+ */
+function getContentTypeFromArtifact(artifactType?: string): ContentType | null {
+  if (!artifactType) return null;
+
+  // Explicit text types
+  if (artifactType === 'text/markdown' || artifactType === 'text/md') return 'markdown';
+  if (artifactType === 'text/csv') return 'table';
+  if (artifactType === 'text/plain') return 'text';
+
+  // Code types - always treat as code
+  if (
+    artifactType.includes('react') ||
+    artifactType.includes('html') ||
+    artifactType.includes('code') ||
+    artifactType.includes('javascript') ||
+    artifactType.includes('typescript') ||
+    artifactType.includes('json') ||
+    artifactType.includes('css') ||
+    artifactType.includes('python') ||
+    artifactType.includes('java') ||
+    artifactType === 'application/vnd.ant.code'
+  ) {
+    return 'code';
+  }
+
+  return null; // Detection needed
+}
+
+/**
+ * Detect if content is code with stricter threshold
+ * Requires 20% of lines to match code patterns OR full file structure
+ */
+function isCodeContent(content: string): boolean {
+  const lines = content.trim().split('\n');
+
+  // Full file indicators - if starts with these, it's definitely code
+  const firstLine = lines[0]?.trim() || '';
+  if (/^import\s+/.test(firstLine) || /^<!DOCTYPE/i.test(firstLine) || /^<\?xml/i.test(firstLine)) {
+    return true;
+  }
+
+  // Line-by-line code pattern detection
+  const codePatterns = [
+    /^import\s+.*from\s+['"`]/, // import X from 'Y'
+    /^export\s+(default\s+)?/, // export / export default
+    /^(const|let|var)\s+\w+\s*=/, // variable declarations
+    /^function\s+\w+\s*\(/, // function declarations
+    /^class\s+\w+/, // class declarations
+    /^\s*return\s+/, // return statements
+    /^<\w+(\s|>|\/)/, // JSX opening tags (start of line only)
+    /^\s*\}\s*$/, // closing braces alone
+    /^\s*\)\s*;?\s*$/, // closing parens
+    /^\s*if\s*\(/, // if statements
+    /^\s*for\s*\(/, // for loops
+    /^\s*while\s*\(/, // while loops
+    /^@\w+/, // decorators
+    /^\s*\/\//, // single line comments
+    /^\s*\/\*/, // multi-line comment start
+    /^\s*\*/, // multi-line comment continuation
+    /@import\s+/, // CSS imports
+    /\.\w+\s*\{/, // CSS selectors
+    /^\s*\w+:\s*\w+;/, // CSS properties
+  ];
+
+  let codeLines = 0;
+
+  for (const line of lines) {
+    if (line.trim() === '') continue; // Skip empty lines for counting
+    if (codePatterns.some((p) => p.test(line))) {
+      codeLines++;
+    }
+  }
+
+  const nonEmptyLines = lines.filter((l) => l.trim() !== '').length;
+
+  // Code if: 20%+ code lines RATIO
+  return nonEmptyLines > 0 && codeLines / nonEmptyLines >= 0.2;
 }
 
 // Detect if content is markdown
@@ -90,35 +437,91 @@ function isMarkdownContent(content: string): boolean {
   return markdownFeatures >= 3;
 }
 
-// Detect if content is a table (markdown or CSV)
-function isTableContent(content: string): { isTable: boolean; delimiter: string } {
+/**
+ * Parse a CSV line properly handling quoted values
+ */
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        // Toggle quote mode
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+/**
+ * Detect if content is a table (markdown or CSV)
+ * Returns parsed rows for consistent handling
+ */
+function isTableContent(content: string): { isTable: boolean; delimiter: string; rows: string[][] } {
   const lines = content.trim().split('\n').filter((l) => l.trim());
 
-  // Check for markdown table (pipes with separator line)
-  const hasPipes = lines.filter((l) => l.includes('|')).length > 2;
-  const hasSeparatorLine = lines.some((l) => /^\|?[-:\s|]+\|?$/.test(l));
-
-  if (hasPipes && hasSeparatorLine) {
-    return { isTable: true, delimiter: '|' };
+  if (lines.length < 2) {
+    return { isTable: false, delimiter: '', rows: [] };
   }
 
-  // Check for CSV (consistent comma count across lines)
-  const commaCountsPerLine = lines.map((l) => (l.match(/,/g) || []).length);
-  const avgCommas = commaCountsPerLine.reduce((a, b) => a + b, 0) / lines.length;
-  const consistentCommas =
-    avgCommas >= 1 && commaCountsPerLine.every((c) => Math.abs(c - avgCommas) <= 1);
+  // Check for markdown table: | at start AND end of lines
+  const markdownTableLines = lines.filter((l) => /^\|.*\|$/.test(l.trim()));
+  if (markdownTableLines.length >= 3) {
+    // Check for separator row: |---|---|
+    const hasSeparator = markdownTableLines.some((l) => /^\|[-:\s|]+\|$/.test(l.trim()));
+    if (hasSeparator) {
+      const rows = markdownTableLines
+        .filter((l) => !/^[-:\s|]+$/.test(l.replace(/\|/g, '').trim())) // Filter separator lines
+        .map((l) =>
+          l
+            .split('|')
+            .slice(1, -1) // Remove first and last empty elements from split
+            .map((c) => c.trim()), // Keep empty cells!
+        );
+      return { isTable: true, delimiter: '|', rows };
+    }
+  }
 
-  if (consistentCommas && lines.length >= 2) {
-    return { isTable: true, delimiter: ',' };
+  // Check for CSV: consistent comma count, at least 2 columns
+  const commaMatches = lines.map((l) => (l.match(/,/g) || []).length);
+  if (commaMatches.length >= 2) {
+    const firstCount = commaMatches[0];
+    // All lines should have the same number of commas (±1 for last line)
+    const allConsistent = commaMatches.every((c) => Math.abs(c - firstCount) <= 1) && firstCount >= 1;
+    if (allConsistent) {
+      const rows = lines.map((l) => parseCSVLine(l)); // Proper CSV parsing
+      return { isTable: true, delimiter: ',', rows };
+    }
   }
 
   // Check for tab-separated
-  const hasTabsConsistently = lines.every((l) => l.includes('\t'));
-  if (hasTabsConsistently && lines.length >= 2) {
-    return { isTable: true, delimiter: '\t' };
+  const tabMatches = lines.map((l) => (l.match(/\t/g) || []).length);
+  if (tabMatches.length >= 2) {
+    const firstCount = tabMatches[0];
+    const allConsistent = tabMatches.every((c) => c === firstCount) && firstCount >= 1;
+    if (allConsistent) {
+      const rows = lines.map((l) => l.split('\t').map((c) => c.trim()));
+      return { isTable: true, delimiter: '\t', rows };
+    }
   }
 
-  return { isTable: false, delimiter: '' };
+  return { isTable: false, delimiter: '', rows: [] };
 }
 
 // Parse markdown content for structure
@@ -153,10 +556,74 @@ function parseMarkdownStructure(
   return { headings, listItems };
 }
 
-// Parse content - detect type and extract structured data
-function parseContent(content: string): ParsedContent {
+/**
+ * Parse content - detect type and extract structured data
+ * @param content - The raw content string
+ * @param artifactType - Optional artifact MIME type for pre-filtering
+ */
+function parseContent(content: string, artifactType?: string): ParsedContent {
   const cleaned = cleanArtifactContent(content);
-  const lines = cleaned.trim().split('\n');
+
+  // Special case: React dashboards/charts should be parsed for data, not shown as code
+  if (isReactDashboard(cleaned, artifactType)) {
+    const reactData = parseReactDashboard(cleaned);
+    return {
+      type: 'react-dashboard',
+      rows: [],
+      text: cleaned,
+      headings: [],
+      listItems: [],
+      reactData,
+    };
+  }
+
+  // First: try to get explicit type from artifact.type
+  const explicitType = getContentTypeFromArtifact(artifactType);
+
+  if (explicitType === 'code') {
+    return {
+      type: 'code',
+      rows: [],
+      text: cleaned,
+      headings: [],
+      listItems: [],
+    };
+  }
+
+  if (explicitType === 'table') {
+    // Even with explicit table type, try to parse the rows
+    const tableCheck = isTableContent(cleaned);
+    return {
+      type: 'table',
+      rows: tableCheck.rows,
+      text: cleaned,
+      headings: [],
+      listItems: [],
+    };
+  }
+
+  if (explicitType === 'markdown') {
+    const { headings, listItems } = parseMarkdownStructure(cleaned);
+    return {
+      type: 'markdown',
+      rows: [],
+      text: cleaned,
+      headings,
+      listItems,
+    };
+  }
+
+  if (explicitType === 'text') {
+    return {
+      type: 'text',
+      rows: [],
+      text: cleaned,
+      headings: [],
+      listItems: [],
+    };
+  }
+
+  // Fallback: content-based detection
 
   // Check for code first (highest priority to avoid wrong detection)
   if (isCodeContent(cleaned)) {
@@ -169,23 +636,12 @@ function parseContent(content: string): ParsedContent {
     };
   }
 
-  // Check for table
+  // Check for table - now returns rows directly
   const tableCheck = isTableContent(cleaned);
   if (tableCheck.isTable) {
-    const rows = lines
-      .filter((l) => l.trim())
-      .filter((l) => !/^[-:\s|]+$/.test(l)) // Filter out separator lines
-      .map((l) =>
-        l
-          .split(tableCheck.delimiter)
-          .map((cell) => cell.trim())
-          .filter((cell) => cell !== ''),
-      )
-      .filter((row) => row.length > 0);
-
     return {
       type: 'table',
-      rows,
+      rows: tableCheck.rows, // Use pre-parsed rows
       text: cleaned,
       headings: [],
       listItems: [],
@@ -214,6 +670,24 @@ function parseContent(content: string): ParsedContent {
   };
 }
 
+/**
+ * Get recommended export formats based on content type
+ */
+function getRecommendedFormats(contentType: ContentType): ExportFormat[] {
+  switch (contentType) {
+    case 'table':
+      return ['xlsx', 'csv', 'pdf'];
+    case 'code':
+      return ['txt'];
+    case 'markdown':
+      return ['pdf', 'docx', 'pptx'];
+    case 'react-dashboard':
+      return ['pdf', 'xlsx', 'pptx']; // Dashboard data exports
+    default:
+      return ['txt', 'pdf'];
+  }
+}
+
 export function useArtifactExport() {
   const [status, setStatus] = useState<ExportStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -234,12 +708,12 @@ export function useArtifactExport() {
     downloadBlob(blob, filename);
   }, []);
 
-  const exportToPdf = useCallback(async (content: string, title: string) => {
+  const exportToPdf = useCallback(async (content: string, title: string, artifactType?: string) => {
     setStatus('loading');
     try {
       const jsPDF = await loadJsPDF();
       const doc = new jsPDF();
-      const parsed = parseContent(content);
+      const parsed = parseContent(content, artifactType);
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -247,7 +721,7 @@ export function useArtifactExport() {
       let y = margin;
 
       // Helper to check page break
-      const checkPageBreak = (requiredSpace: number = 20) => {
+      const checkPageBreak = (_requiredSpace: number = 20) => {
         if (y > pageHeight - 30) {
           doc.addPage();
           y = margin;
@@ -447,6 +921,96 @@ export function useArtifactExport() {
           break;
         }
 
+        case 'react-dashboard': {
+          // Professional dashboard data rendering
+          const { reactData } = parsed;
+          if (!reactData) break;
+
+          // Render section headers from comments
+          if (reactData.comments.length > 0) {
+            doc.setFontSize(11);
+            doc.setTextColor(...BRAND.secondary);
+            reactData.comments.slice(0, 5).forEach((comment) => {
+              checkPageBreak(10);
+              doc.text(`• ${comment}`, margin, y);
+              y += 6;
+            });
+            y += 5;
+          }
+
+          // Render each dataset as a table
+          reactData.datasets.forEach((dataset) => {
+            checkPageBreak(30);
+
+            // Dataset title
+            doc.setFontSize(14);
+            doc.setTextColor(...BRAND.primary);
+            const datasetTitle = dataset.name.replace(/([A-Z])/g, ' $1').trim();
+            doc.text(datasetTitle, margin, y);
+            y += 10;
+
+            if (dataset.data.length === 0 || dataset.columns.length === 0) return;
+
+            const numCols = dataset.columns.length;
+            const tableWidth = pageWidth - margin * 2;
+            const colWidth = tableWidth / numCols;
+            const rowHeight = 7;
+
+            // Header row
+            doc.setFillColor(...BRAND.primary);
+            doc.rect(margin, y - 4, tableWidth, rowHeight + 1, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+
+            dataset.columns.forEach((col, colIdx) => {
+              const x = margin + colIdx * colWidth + 2;
+              const headerText = col.replace(/([A-Z])/g, ' $1').trim();
+              doc.text(headerText.substring(0, 15), x, y);
+            });
+            y += rowHeight + 1;
+
+            // Data rows
+            dataset.data.slice(0, 20).forEach((row, rowIdx) => {
+              checkPageBreak(rowHeight + 2);
+
+              // Alternating row colors
+              if (rowIdx % 2 === 0) {
+                doc.setFillColor(...BRAND.lightBg);
+                doc.rect(margin, y - 4, tableWidth, rowHeight, 'F');
+              }
+
+              doc.setTextColor(...BRAND.text);
+              doc.setFontSize(8);
+
+              dataset.columns.forEach((col, colIdx) => {
+                const x = margin + colIdx * colWidth + 2;
+                const cellValue = String(row[col] ?? '');
+                doc.text(cellValue.substring(0, 18), x, y);
+              });
+
+              y += rowHeight;
+            });
+
+            // Border around table
+            doc.setDrawColor(...BRAND.border);
+            doc.setLineWidth(0.3);
+            const tableHeight = (Math.min(dataset.data.length, 20) + 1) * rowHeight + 1;
+            doc.rect(margin, y - tableHeight - 4, tableWidth, tableHeight + 4);
+
+            y += 15;
+          });
+
+          // Show truncation notice if needed
+          const totalRows = reactData.datasets.reduce((sum, ds) => sum + ds.data.length, 0);
+          if (totalRows > 20) {
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Megjegyzés: Az adatok egy része nem került megjelenítésre (${totalRows} sor összesen)`, margin, y);
+            y += 10;
+          }
+          break;
+        }
+
         default: {
           // Plain text - simple paragraph rendering
           doc.setFontSize(11);
@@ -483,45 +1047,90 @@ export function useArtifactExport() {
     }
   }, []);
 
-  const exportToXlsx = useCallback(async (content: string, title: string) => {
+  const exportToXlsx = useCallback(async (content: string, title: string, artifactType?: string) => {
     setStatus('loading');
     try {
       const XLSX = await loadXLSX();
-      const parsed = parseContent(content);
-
-      let data: string[][];
-
-      if (parsed.type === 'table' && parsed.rows.length > 0) {
-        data = parsed.rows;
-      } else {
-        // Convert text to rows
-        data = parsed.text.split('\n').map((line) => [line]);
-      }
-
-      // Add header rows with branding
-      const headerRow = ['Actionable+ Export'];
-      const dateRow = [`Generated: ${new Date().toLocaleDateString('hu-HU')}`];
-      const titleRow = [title || 'Export'];
-      const emptyRow = [''];
-
-      const fullData = [headerRow, dateRow, titleRow, emptyRow, ...data];
-
-      const worksheet = XLSX.utils.aoa_to_sheet(fullData);
-
-      // Calculate column widths based on content
-      const numCols = Math.max(...fullData.map((row) => row.length));
-      const colWidths: number[] = [];
-
-      for (let col = 0; col < numCols; col++) {
-        const maxLen = Math.max(
-          ...fullData.map((row) => (row[col]?.toString().length || 0)),
-        );
-        colWidths.push(Math.min(Math.max(maxLen + 2, 10), 50));
-      }
-      worksheet['!cols'] = colWidths.map((wch) => ({ wch }));
-
+      const parsed = parseContent(content, artifactType);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Export');
+
+      // Handle react-dashboard with multiple sheets
+      if (parsed.type === 'react-dashboard' && parsed.reactData) {
+        const { reactData } = parsed;
+
+        // Create a sheet for each dataset
+        reactData.datasets.forEach((dataset, idx) => {
+          if (dataset.data.length === 0) return;
+
+          // Header row
+          const headerRow = dataset.columns.map((col) =>
+            col.replace(/([A-Z])/g, ' $1').trim(),
+          );
+
+          // Data rows
+          const dataRows = dataset.data.map((row) =>
+            dataset.columns.map((col) => String(row[col] ?? '')),
+          );
+
+          const sheetData = [headerRow, ...dataRows];
+          const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+          // Column widths
+          const colWidths = dataset.columns.map((col) => {
+            const maxLen = Math.max(
+              col.length,
+              ...dataset.data.map((row) => String(row[col] ?? '').length),
+            );
+            return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+          });
+          worksheet['!cols'] = colWidths;
+
+          // Sheet name (max 31 chars for Excel)
+          const sheetName = dataset.name.substring(0, 28) || `Adatok ${idx + 1}`;
+          XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        });
+
+        // If no datasets, create summary sheet
+        if (reactData.datasets.length === 0) {
+          const summaryData = [
+            ['Actionable+ Export'],
+            [title || 'Dashboard Export'],
+            [`Generálva: ${new Date().toLocaleDateString('hu-HU')}`],
+            [''],
+            ['Nem található táblázatos adat a dashboardban.'],
+          ];
+          const worksheet = XLSX.utils.aoa_to_sheet(summaryData);
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'Összefoglaló');
+        }
+      } else {
+        // Original logic for other content types
+        let data: string[][];
+
+        if (parsed.type === 'table' && parsed.rows.length > 0) {
+          data = parsed.rows;
+        } else {
+          data = parsed.text.split('\n').map((line) => [line]);
+        }
+
+        const headerRow = ['Actionable+ Export'];
+        const dateRow = [`Generated: ${new Date().toLocaleDateString('hu-HU')}`];
+        const titleRow = [title || 'Export'];
+        const emptyRow = [''];
+
+        const fullData = [headerRow, dateRow, titleRow, emptyRow, ...data];
+        const worksheet = XLSX.utils.aoa_to_sheet(fullData);
+
+        const numCols = Math.max(...fullData.map((row) => row.length));
+        const colWidths: number[] = [];
+
+        for (let col = 0; col < numCols; col++) {
+          const maxLen = Math.max(...fullData.map((row) => (row[col]?.toString().length || 0)));
+          colWidths.push(Math.min(Math.max(maxLen + 2, 10), 50));
+        }
+        worksheet['!cols'] = colWidths.map((wch) => ({ wch }));
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Export');
+      }
 
       XLSX.writeFile(workbook, generateFilename(title, 'xlsx'));
       setStatus('success');
@@ -532,13 +1141,13 @@ export function useArtifactExport() {
     }
   }, []);
 
-  const exportToDocx = useCallback(async (content: string, title: string) => {
+  const exportToDocx = useCallback(async (content: string, title: string, artifactType?: string) => {
     setStatus('loading');
     try {
       const docx = await loadDocx();
       const { Document, Paragraph, TextRun, HeadingLevel, Header, Footer, AlignmentType, Packer } =
         docx;
-      const parsed = parseContent(content);
+      const parsed = parseContent(content, artifactType);
 
       // Build content paragraphs based on type
       const buildContentParagraphs = (): unknown[] => {
@@ -707,6 +1316,128 @@ export function useArtifactExport() {
             break;
           }
 
+          case 'react-dashboard': {
+            // Professional dashboard data rendering for Word
+            const { reactData } = parsed;
+            if (!reactData) break;
+
+            // Render section headers from comments
+            if (reactData.comments.length > 0) {
+              paragraphs.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: 'Dashboard összefoglaló',
+                      bold: true,
+                      size: 28,
+                      color: '3B82F6',
+                    }),
+                  ],
+                  spacing: { before: 200, after: 120 },
+                }),
+              );
+
+              reactData.comments.slice(0, 5).forEach((comment) => {
+                paragraphs.push(
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: '•  ', color: '3B82F6' }),
+                      new TextRun({ text: comment, size: 22 }),
+                    ],
+                    indent: { left: 360 },
+                    spacing: { after: 60 },
+                  }),
+                );
+              });
+            }
+
+            // Render each dataset
+            reactData.datasets.forEach((dataset) => {
+              if (dataset.data.length === 0 || dataset.columns.length === 0) return;
+
+              // Dataset section title
+              const datasetTitle = dataset.name.replace(/([A-Z])/g, ' $1').trim();
+              paragraphs.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: datasetTitle,
+                      bold: true,
+                      size: 26,
+                      color: '1E293B',
+                    }),
+                  ],
+                  spacing: { before: 240, after: 120 },
+                }),
+              );
+
+              // Table header
+              paragraphs.push(
+                new Paragraph({
+                  children: dataset.columns.map((col, colIdx) =>
+                    new TextRun({
+                      text: col.replace(/([A-Z])/g, ' $1').trim() + (colIdx < dataset.columns.length - 1 ? '  |  ' : ''),
+                      bold: true,
+                      color: '3B82F6',
+                      size: 22,
+                    }),
+                  ),
+                  shading: { fill: 'F8FAFC' },
+                  spacing: { after: 80 },
+                }),
+              );
+
+              // Separator line
+              paragraphs.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: '─'.repeat(60),
+                      color: 'E2E8F0',
+                      size: 20,
+                    }),
+                  ],
+                  spacing: { after: 60 },
+                }),
+              );
+
+              // Data rows (limit to 30 rows for Word)
+              dataset.data.slice(0, 30).forEach((row, rowIdx) => {
+                paragraphs.push(
+                  new Paragraph({
+                    children: dataset.columns.map((col, colIdx) =>
+                      new TextRun({
+                        text: String(row[col] ?? '') + (colIdx < dataset.columns.length - 1 ? '  |  ' : ''),
+                        size: 20,
+                        color: '374151',
+                      }),
+                    ),
+                    shading: { fill: rowIdx % 2 === 0 ? 'FFFFFF' : 'F8FAFC' },
+                    spacing: { after: 40 },
+                  }),
+                );
+              });
+
+              // Truncation notice
+              if (dataset.data.length > 30) {
+                paragraphs.push(
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: `... és további ${dataset.data.length - 30} sor`,
+                        italic: true,
+                        color: '94A3B8',
+                        size: 18,
+                      }),
+                    ],
+                    spacing: { before: 60, after: 120 },
+                  }),
+                );
+              }
+            });
+            break;
+          }
+
           default: {
             // Plain text
             parsed.text.split('\n').forEach((line) => {
@@ -802,7 +1533,7 @@ export function useArtifactExport() {
     }
   }, []);
 
-  const exportToPptx = useCallback(async (content: string, title: string) => {
+  const exportToPptx = useCallback(async (content: string, title: string, artifactType?: string) => {
     setStatus('loading');
     try {
       const PptxGenJS = await loadPptxGenJS();
@@ -813,7 +1544,7 @@ export function useArtifactExport() {
       pptx.company = 'Actionable+ E-Commerce Consulting';
       pptx.title = title || 'Export';
 
-      const parsed = parseContent(content);
+      const parsed = parseContent(content, artifactType);
 
       // Title slide with gradient background
       const titleSlide = pptx.addSlide();
@@ -983,6 +1714,144 @@ export function useArtifactExport() {
           break;
         }
 
+        case 'react-dashboard': {
+          // Professional dashboard slides with data tables
+          const { reactData } = parsed;
+          if (!reactData) break;
+
+          // Summary slide with comments/key points
+          if (reactData.comments.length > 0 || reactData.metrics.length > 0) {
+            const summarySlide = pptx.addSlide();
+            summarySlide.addText('Dashboard Összefoglaló', {
+              x: 0.5,
+              y: 0.3,
+              w: 9,
+              h: 0.6,
+              fontSize: 28,
+              bold: true,
+              color: '1E293B',
+            });
+
+            const summaryContent = reactData.comments.slice(0, 8).map((c) => `• ${c}`).join('\n');
+            summarySlide.addText(summaryContent || 'Dashboard adatok', {
+              x: 0.5,
+              y: 1.2,
+              w: 9,
+              h: 3.5,
+              fontSize: 16,
+              color: '374151',
+              valign: 'top',
+              lineSpacingMultiple: 1.4,
+            });
+          }
+
+          // Data slides - one for each dataset
+          reactData.datasets.forEach((dataset) => {
+            if (dataset.data.length === 0 || dataset.columns.length === 0) return;
+
+            const datasetTitle = dataset.name.replace(/([A-Z])/g, ' $1').trim();
+            const rowsPerSlide = 10;
+
+            // Split data into multiple slides if needed
+            for (let i = 0; i < dataset.data.length; i += rowsPerSlide) {
+              const slideData = dataset.data.slice(i, i + rowsPerSlide);
+              const dataSlide = pptx.addSlide();
+
+              const slideTitle = i === 0
+                ? datasetTitle
+                : `${datasetTitle} (folytatás ${Math.floor(i / rowsPerSlide) + 1})`;
+
+              dataSlide.addText(slideTitle, {
+                x: 0.5,
+                y: 0.3,
+                w: 9,
+                h: 0.5,
+                fontSize: 24,
+                bold: true,
+                color: '1E293B',
+              });
+
+              // Build table rows with explicit type
+              type PptxTableCell = { text: string; options: Record<string, unknown> };
+              const tableRows: PptxTableCell[][] = [];
+
+              // Header row
+              const headerRow: PptxTableCell[] = dataset.columns.map((col) => ({
+                text: col.replace(/([A-Z])/g, ' $1').trim(),
+                options: {
+                  fill: '3B82F6',
+                  color: 'FFFFFF',
+                  bold: true,
+                  fontSize: 11,
+                },
+              }));
+              tableRows.push(headerRow);
+
+              // Data rows
+              slideData.forEach((row, rowIdx) => {
+                const dataRow: PptxTableCell[] = dataset.columns.map((col) => ({
+                  text: String(row[col] ?? ''),
+                  options: {
+                    fill: rowIdx % 2 === 0 ? 'F8FAFC' : 'FFFFFF',
+                    color: '374151',
+                    fontSize: 10,
+                  },
+                }));
+                tableRows.push(dataRow);
+              });
+
+              // Calculate column widths
+              const numCols = dataset.columns.length;
+              const colWidth = 9 / numCols;
+
+              dataSlide.addTable(tableRows, {
+                x: 0.5,
+                y: 1,
+                w: 9,
+                colW: Array(numCols).fill(colWidth),
+                border: { pt: 0.5, color: 'E2E8F0' },
+              });
+
+              // Add row count info
+              if (i === 0 && dataset.data.length > rowsPerSlide) {
+                dataSlide.addText(`Összesen ${dataset.data.length} sor`, {
+                  x: 0.5,
+                  y: 4.8,
+                  w: 9,
+                  h: 0.3,
+                  fontSize: 10,
+                  color: '94A3B8',
+                  align: 'right',
+                });
+              }
+            }
+          });
+
+          // If no datasets, show a message
+          if (reactData.datasets.length === 0) {
+            const noDataSlide = pptx.addSlide();
+            noDataSlide.addText('Dashboard Adatok', {
+              x: 0.5,
+              y: 0.3,
+              w: 9,
+              h: 0.6,
+              fontSize: 28,
+              bold: true,
+              color: '1E293B',
+            });
+            noDataSlide.addText('A dashboardban nem található táblázatos adat.', {
+              x: 0.5,
+              y: 2,
+              w: 9,
+              h: 1,
+              fontSize: 16,
+              color: '64748B',
+              align: 'center',
+            });
+          }
+          break;
+        }
+
         default: {
           // Plain text - split into slides
           const lines = parsed.text.split('\n').filter((l) => l.trim());
@@ -1029,7 +1898,7 @@ export function useArtifactExport() {
   }, []);
 
   const exportArtifact = useCallback(
-    async (content: string, title: string, format: ExportFormat) => {
+    async (content: string, title: string, format: ExportFormat, artifactType?: string) => {
       setError(null);
       switch (format) {
         case 'txt':
@@ -1037,17 +1906,25 @@ export function useArtifactExport() {
         case 'csv':
           return exportToCsv(content, title);
         case 'pdf':
-          return exportToPdf(content, title);
+          return exportToPdf(content, title, artifactType);
         case 'xlsx':
-          return exportToXlsx(content, title);
+          return exportToXlsx(content, title, artifactType);
         case 'docx':
-          return exportToDocx(content, title);
+          return exportToDocx(content, title, artifactType);
         case 'pptx':
-          return exportToPptx(content, title);
+          return exportToPptx(content, title, artifactType);
       }
     },
     [exportToTxt, exportToCsv, exportToPdf, exportToXlsx, exportToDocx, exportToPptx],
   );
 
-  return { exportArtifact, status, error };
+  /**
+   * Get recommended formats for a given content
+   */
+  const getRecommendedFormatsForContent = useCallback((content: string, artifactType?: string): ExportFormat[] => {
+    const parsed = parseContent(content, artifactType);
+    return getRecommendedFormats(parsed.type);
+  }, []);
+
+  return { exportArtifact, getRecommendedFormatsForContent, status, error };
 }

@@ -10,17 +10,26 @@ import { useLocalize } from '~/hooks';
 
 /**
  * Remove code block markers from artifact content for clean copying
- * Handles: ```language ... ``` format
+ * Handles: ```language ... ``` format, ~~~language ... ~~~ format, and HTML comment wrappers
  */
 export function cleanArtifactContent(content: string): string {
   if (!content) {
     return '';
   }
   let cleaned = content.trim();
-  // Remove opening code block with optional language specifier
+
+  // 1. Backtick fence (```lang ... ```)
   cleaned = cleaned.replace(/^```[\w-]*\n?/, '');
-  // Remove closing code block
   cleaned = cleaned.replace(/\n?```\s*$/, '');
+
+  // 2. Tilde fence (~~~lang ... ~~~)
+  cleaned = cleaned.replace(/^~~~[\w-]*\n?/, '');
+  cleaned = cleaned.replace(/\n?~~~\s*$/, '');
+
+  // 3. HTML comment wrappers (<!-- ... --> at start/end)
+  cleaned = cleaned.replace(/^<!--[\s\S]*?-->\n?/, '');
+  cleaned = cleaned.replace(/\n?<!--[\s\S]*?-->$/, '');
+
   return cleaned.trim();
 }
 

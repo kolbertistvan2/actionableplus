@@ -10,7 +10,10 @@ interface JsPDFInstance {
   setFontSize(size: number): void;
   setTextColor(r: number, g: number, b: number): void;
   setFillColor(r: number, g: number, b: number): void;
-  rect(x: number, y: number, w: number, h: number, style: string): void;
+  setDrawColor(r: number, g: number, b: number): void;
+  setLineWidth(width: number): void;
+  rect(x: number, y: number, w: number, h: number, style?: string): void;
+  line(x1: number, y1: number, x2: number, y2: number): void;
   text(text: string | string[], x: number, y: number, options?: object): void;
   splitTextToSize(text: string, maxWidth: number): string[];
   addPage(): void;
@@ -46,10 +49,10 @@ interface DocxModule {
   Document: new (options: unknown) => unknown;
   Paragraph: new (options: unknown) => unknown;
   TextRun: new (options: unknown) => unknown;
-  HeadingLevel: { HEADING_1: unknown };
+  HeadingLevel: { HEADING_1: unknown; HEADING_2: unknown; HEADING_3: unknown };
   Header: new (options: unknown) => unknown;
   Footer: new (options: unknown) => unknown;
-  AlignmentType: { CENTER: unknown };
+  AlignmentType: { CENTER: unknown; LEFT: unknown; RIGHT: unknown };
   Packer: { toBlob: (doc: unknown) => Promise<Blob> };
 }
 
@@ -69,7 +72,8 @@ interface PptxGenJSInstance {
 
 interface PptxSlide {
   addText(text: string, options: Record<string, unknown>): void;
-  addTable(rows: string[][], options: Record<string, unknown>): void;
+  addTable(rows: unknown[][], options: Record<string, unknown>): void;
+  addShape(shape: string, options: Record<string, unknown>): void;
 }
 
 // ============ Window Extensions ============
