@@ -29,7 +29,7 @@ function getGitInfo() {
     // Final fallback
     return {
       commitHash: railwayCommit || 'dev',
-      branch: railwayBranch || 'local',
+      branch: railwayBranch || 'dev',
     };
   }
 }
