@@ -197,6 +197,17 @@ export default defineConfig(({ command }) => ({
               return 'heic-converter';
             }
 
+            // Export libraries - separate chunks for lazy loading
+            if (normalizedId.includes('jspdf')) {
+              return 'pdf-export';
+            }
+            if (normalizedId.includes('docx')) {
+              return 'docx-export';
+            }
+            if (normalizedId.includes('xlsx')) {
+              return 'xlsx-export';
+            }
+
             // Existing chunks
             if (normalizedId.includes('@radix-ui')) {
               return 'radix-ui';
