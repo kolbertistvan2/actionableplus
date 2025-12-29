@@ -8,6 +8,22 @@ import { Copy, CircleCheckBig } from 'lucide-react';
 import { handleDoubleClick, langSubset } from '~/utils';
 import { useLocalize } from '~/hooks';
 
+/**
+ * Remove code block markers from artifact content for clean copying
+ * Handles: ```language ... ``` format
+ */
+export function cleanArtifactContent(content: string): string {
+  if (!content) {
+    return '';
+  }
+  let cleaned = content.trim();
+  // Remove opening code block with optional language specifier
+  cleaned = cleaned.replace(/^```[\w-]*\n?/, '');
+  // Remove closing code block
+  cleaned = cleaned.replace(/\n?```\s*$/, '');
+  return cleaned.trim();
+}
+
 type TCodeProps = {
   inline: boolean;
   className?: string;
@@ -102,7 +118,8 @@ export const CopyCodeButton: React.FC<{ content: string }> = ({ content }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
-    copy(content, { format: 'text/plain' });
+    const cleanedContent = cleanArtifactContent(content);
+    copy(cleanedContent, { format: 'text/plain' });
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 3000);
   };

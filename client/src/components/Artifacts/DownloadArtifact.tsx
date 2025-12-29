@@ -2,22 +2,46 @@ import React, { useState } from 'react';
 import { Download, CircleCheckBig } from 'lucide-react';
 import type { Artifact } from '~/common';
 import { Button } from '@librechat/client';
-import useArtifactProps from '~/hooks/Artifacts/useArtifactProps';
+import { cleanArtifactContent } from './Code';
 import { useCodeState } from '~/Providers/EditorContext';
 import { useLocalize } from '~/hooks';
+
+/**
+ * Sanitize a string for use as a filename
+ */
+function sanitizeForFilename(str: string): string {
+  return str
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Generate export filename: {title}-actionableplus-export-{timestamp}
+ */
+function generateExportFilename(title: string, extension: string): string {
+  const sanitizedTitle = sanitizeForFilename(title) || 'artifact';
+  const timestamp = Math.floor(Date.now() / 1000);
+  return `${sanitizedTitle}-actionableplus-export-${timestamp}.${extension}`;
+}
 
 const DownloadArtifact = ({ artifact }: { artifact: Artifact }) => {
   const localize = useLocalize();
   const { currentCode } = useCodeState();
   const [isDownloaded, setIsDownloaded] = useState(false);
-  const { fileKey: fileName } = useArtifactProps({ artifact });
 
   const handleDownload = () => {
     try {
-      const content = currentCode ?? artifact.content ?? '';
-      if (!content) {
+      const rawContent = currentCode ?? artifact.content ?? '';
+      if (!rawContent) {
         return;
       }
+      // Clean content and generate proper filename
+      const content = cleanArtifactContent(rawContent);
+      const fileName = generateExportFilename(artifact.title ?? 'artifact', 'txt');
+
       const blob = new Blob([content], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
