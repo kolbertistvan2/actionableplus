@@ -9,54 +9,12 @@ E-commerce consulting app with specialized AI agents (based on LibreChat).
 ## Tech Stack
 
 - **Base:** https://github.com/kolbertistvan2/actionableplus (LibreChat fork)
-- **Upstream:** https://github.com/danny-avila/LibreChat
 - **AI Providers:**
   - Anthropic Claude (primary)
   - Google Gemini
   - OpenAI
 - **Deployment:** Railway (production: https://app.actionableplus.com)
 - **Local Dev:** Docker Desktop
-
-## LibreChat Fork - Custom Modifications
-
-**IMPORTANT:** Ez a projekt LibreChat fork. Az alábbi fájlok tartalmaznak egyedi módosításokat, amiket LibreChat frissítésnél meg kell őrizni!
-
-### Modified Files (Keep on Merge)
-
-| File | Modification | Description |
-|------|--------------|-------------|
-| `client/package.json` | Added deps | docx, jspdf, xlsx for export |
-| `client/src/components/Artifacts/Artifacts.tsx` | ExportArtifact | Replaced DownloadArtifact |
-| `client/src/components/Artifacts/ExportArtifact.tsx` | **NEW FILE** | Multi-format export dropdown |
-| `client/src/components/Artifacts/ArtifactCodeEditor.tsx` | wrapContent | Added word wrap |
-| `client/src/components/Artifacts/ArtifactPreview.tsx` | bundlerURL fix | Handle undefined bundlerURL |
-| `client/src/hooks/Artifacts/useArtifactProps.ts` | markdown detect | Content-based type detection |
-| `client/src/utils/artifacts.ts` | CSS fixes | Text wrap, chart overlap |
-| `api/server/routes/config.js` | bundlerURL | Already in upstream |
-
-### Deleted Files (Don't Restore)
-
-| File | Reason |
-|------|--------|
-| `client/src/components/Artifacts/DownloadArtifact.tsx` | Replaced by ExportArtifact |
-
-### Merge Strategy
-
-```bash
-# When merging upstream LibreChat updates:
-git fetch upstream
-git merge upstream/main
-
-# Conflicts expected in:
-# - client/package.json (keep our deps)
-# - Artifacts components (keep our changes)
-
-# After merge, verify:
-# 1. Export dropdown works
-# 2. Markdown detection works
-# 3. Word wrap in code editor
-# 4. Sandpack bundler URL
-```
 
 ## Latest AI Models (Dec 2025)
 
