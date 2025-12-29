@@ -6,7 +6,7 @@ import { Button, Spinner, useMediaQuery, Radio } from '@librechat/client';
 import type { SandpackPreviewRef, CodeEditorRef } from '@codesandbox/sandpack-react';
 import { useShareContext, useMutationState } from '~/Providers';
 import useArtifacts from '~/hooks/Artifacts/useArtifacts';
-import ExportArtifact from './ExportArtifact';
+import DownloadArtifact from './DownloadArtifact';
 import ArtifactVersion from './ArtifactVersion';
 import ArtifactTabs from './ArtifactTabs';
 import { CopyCodeButton } from './Code';
@@ -281,7 +281,7 @@ export default function Artifacts() {
                 />
               )}
               <CopyCodeButton content={currentArtifact.content ?? ''} />
-              <ExportArtifact artifact={currentArtifact} />
+              <DownloadArtifact artifact={currentArtifact} />
               <Button
                 size="icon"
                 variant="ghost"
