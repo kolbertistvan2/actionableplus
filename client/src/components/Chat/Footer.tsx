@@ -40,13 +40,17 @@ export default function Footer({ className }: { className?: string }) {
     </a>
   );
 
+  // Build info from Vite define
+  const gitCommit = typeof __GIT_COMMIT__ !== 'undefined' ? __GIT_COMMIT__ : 'dev';
+  const gitBranch = typeof __GIT_BRANCH__ !== 'undefined' ? __GIT_BRANCH__ : 'local';
+
   const mainContentParts = (
     typeof config?.customFooter === 'string'
       ? config.customFooter
-      : '[Actionable+ ' +
-        Constants.VERSION +
-        '](https://actionableplus.com) - ' +
-        localize('com_ui_latest_footer')
+      : '[Actionable+ AI Consultant](https://actionableplus.com) - Powered by Kolbert AI - v0.1 beta - ' +
+        gitBranch +
+        ' ' +
+        gitCommit
   ).split('|');
 
   useEffect(() => {

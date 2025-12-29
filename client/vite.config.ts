@@ -1,11 +1,25 @@
 import react from '@vitejs/plugin-react';
 // @ts-ignore
 import path from 'path';
+import { execSync } from 'child_process';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 import { compression } from 'vite-plugin-compression2';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
+
+// Get git info at build time
+function getGitInfo() {
+  try {
+    const commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+    const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+    return { commitHash, branch };
+  } catch {
+    return { commitHash: 'unknown', branch: 'unknown' };
+  }
+}
+
+const gitInfo = getGitInfo();
 
 // https://vitejs.dev/config/
 const backendPort = process.env.BACKEND_PORT && Number(process.env.BACKEND_PORT) || 3080;
@@ -13,6 +27,11 @@ const backendURL = process.env.HOST ? `http://${process.env.HOST}:${backendPort}
 
 export default defineConfig(({ command }) => ({
   base: '',
+  define: {
+    __GIT_COMMIT__: JSON.stringify(gitInfo.commitHash),
+    __GIT_BRANCH__: JSON.stringify(gitInfo.branch),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   server: {
     allowedHosts: process.env.VITE_ALLOWED_HOSTS && process.env.VITE_ALLOWED_HOSTS.split(',') || [],
     host: process.env.HOST || 'localhost',
