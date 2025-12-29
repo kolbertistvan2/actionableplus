@@ -17,6 +17,11 @@ RUN uv --version
 # Set configurable max-old-space-size with default
 ARG NODE_MAX_OLD_SPACE_SIZE=6144
 
+# Railway git info for footer version display
+# Railway automatically passes these as build args if defined here
+ARG RAILWAY_GIT_COMMIT_SHA=""
+ARG RAILWAY_GIT_BRANCH=""
+
 RUN mkdir -p /app && chown node:node /app
 WORKDIR /app
 
@@ -40,6 +45,10 @@ RUN \
     npm ci --no-audit
 
 COPY --chown=node:node . .
+
+# Set Railway git info as environment variables for Vite build
+ENV RAILWAY_GIT_COMMIT_SHA=${RAILWAY_GIT_COMMIT_SHA}
+ENV RAILWAY_GIT_BRANCH=${RAILWAY_GIT_BRANCH}
 
 RUN \
     # React client build with configurable memory

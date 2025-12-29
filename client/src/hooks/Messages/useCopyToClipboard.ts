@@ -27,6 +27,19 @@ const refTypeMap: Record<string, string> = {
   video: 'videos',
 };
 
+/**
+ * Remove artifact blocks from message text for clean copying
+ * Handles: :::artifact{...} content ::: format
+ */
+function removeArtifactBlocks(text: string): string {
+  if (!text) {
+    return '';
+  }
+  // Match :::artifact{...} with any content until a line that starts with :::
+  // The artifact block can contain code blocks with ``` so we need multiline matching
+  return text.replace(/:::artifact\{[^}]*\}[\s\S]*?^:::\s*$/gm, '').trim();
+}
+
 export default function useCopyToClipboard({
   text,
   content,
@@ -62,6 +75,9 @@ export default function useCopyToClipboard({
           return acc;
         }, '');
       }
+
+      // Remove artifact blocks (:::artifact{...} ... :::) before copying
+      messageText = removeArtifactBlocks(messageText);
 
       // Early return if no search data
       if (!searchResults || Object.keys(searchResults).length === 0) {
