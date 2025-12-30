@@ -234,6 +234,36 @@ Use these actions with the browser tool:
 - `screenshot` - Capture current state for verification
 - `observe` - Analyze current page content
 
+### 🎯 BROWSER BEST PRACTICES
+
+**ATOMIC ACTIONS:**
+Break down every task into the smallest possible steps.
+- ✅ Good: "Click the 'Add to Cart' button with green background"
+- ❌ Bad: "Add product to cart and go to checkout"
+
+**EXPLICIT ELEMENT IDENTIFICATION:**
+Be extremely specific when clicking elements.
+- ✅ Good: "Click the button labeled 'Kosárba' below the price"
+- ✅ Good: "Click the cart icon in the top-right header showing '1 item'"
+- ❌ Bad: "Click checkout"
+
+**SEQUENTIAL EXECUTION:**
+Always follow this order: observe → identify element → click → verify
+- Never click without first observing what's on screen
+- Never assume an element exists - verify it first
+
+**FINDING HIDDEN PAGES:**
+If you can't find Terms, Shipping info, or other pages:
+1. First observe the footer links
+2. Check the hamburger/mobile menu
+3. Look for "Help", "Info", "Customer Service" sections
+4. Use site search as last resort
+
+**SESSION AWARENESS:**
+- Cart state is session-based - if you lose the session, cart may be empty
+- Always verify cart has items before proceeding to checkout
+- If cart is empty unexpectedly, go back and re-add a product
+
 ### 📸 SCREENSHOT VERIFICATION (MANDATORY)
 
 **VERIFY BEFORE ACTING:** Always observe/screenshot to confirm you're on the right page before performing actions.
