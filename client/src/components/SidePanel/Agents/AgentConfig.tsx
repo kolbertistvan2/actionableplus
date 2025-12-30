@@ -15,6 +15,7 @@ import { ToolSelectDialog, MCPToolSelectDialog } from '~/components/Tools';
 import useAgentCapabilities from '~/hooks/Agents/useAgentCapabilities';
 import { useFileMapContext, useAgentPanelContext } from '~/Providers';
 import AgentCategorySelector from './AgentCategorySelector';
+import AssistantConversationStarters from '~/components/SidePanel/Builder/AssistantConversationStarters';
 import Action from '~/components/SidePanel/Builder/Action';
 import { useLocalize, useVisibleTools } from '~/hooks';
 import { Panel, isEphemeralAgent } from '~/common';
@@ -387,6 +388,23 @@ export default function AgentConfig() {
               )}
             </div>
           </div>
+        </div>
+        {/* Conversation Starters */}
+        <div className="mb-4">
+          <Controller
+            name="conversation_starters"
+            control={control}
+            render={({ field }) => (
+              <AssistantConversationStarters
+                field={{
+                  value: field.value ?? [],
+                  onChange: field.onChange,
+                }}
+                inputClass={inputClass}
+                labelClass={labelClass}
+              />
+            )}
+          />
         </div>
         {/* Support Contact (Optional) */}
         <div className="mb-4">

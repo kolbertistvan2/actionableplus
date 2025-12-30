@@ -238,6 +238,7 @@ export const defaultAgentFormValues = {
     name: '',
     email: '',
   },
+  conversation_starters: [],
 };
 
 export const ImageVisionTool: FunctionTool = {
