@@ -351,3 +351,89 @@ A `client/src/utils/artifacts.ts` fájlban lévő `/public/index.html` template 
 - Flex column layout a `#root`-on
 - Min-height a recharts containereken
 - Gap a komponensek között
+
+### Chat Copy to Clipboard
+
+A chat üzenet "Copy to clipboard" gombja kiszűri az artifact blokkokat, így csak a szöveges tartalom másolódik.
+
+**Implementáció:** `client/src/hooks/Messages/useCopyToClipboard.ts`
+
+```typescript
+// Regex: :::artifact{...} ... ::: blokkok eltávolítása
+text.replace(/:::artifact\{[^}]*\}[\s\S]*?\n:::\s*(?:\n|$)/g, '').trim()
+```
+
+## Footer Version Display
+
+A footer dinamikusan megjeleníti a git commit hash-t és branch-et.
+
+### Működés
+
+**Lokális fejlesztés:** `git rev-parse` parancsokból
+**Railway deploy:** `RAILWAY_GIT_COMMIT_SHA` és `RAILWAY_GIT_BRANCH` env változókból
+
+### Railway Git Info
+
+A Dockerfile tartalmazza a szükséges ARG-okat, hogy Railway átadja a git infót build time-ban:
+
+```dockerfile
+# Line ~20
+ARG RAILWAY_GIT_COMMIT_SHA=""
+ARG RAILWAY_GIT_BRANCH=""
+
+# Line ~50 (before npm run frontend)
+ENV RAILWAY_GIT_COMMIT_SHA=${RAILWAY_GIT_COMMIT_SHA}
+ENV RAILWAY_GIT_BRANCH=${RAILWAY_GIT_BRANCH}
+```
+
+**Vite config:** `client/vite.config.ts` - `getGitInfo()` függvény
+
+**Footer komponens:** `client/src/components/Nav/SettingsTabs/General/General.tsx`
+
+**FONTOS:** Ne használj `CUSTOM_FOOTER` env változót Railway-en, mert felülírja a dinamikus footer-t!
+
+## Memory System (Persistent Context)
+
+A memory rendszer chat-ok között megjegyzi a felhasználó fontos adatait.
+
+### Konfiguráció
+
+**Fájl:** `librechat.yaml`
+
+```yaml
+memory:
+  disabled: false
+  personalize: true           # User ki/be kapcsolhatja Settings-ben
+  tokenLimit: 12000           # Max tárolt memória tokenben
+  charLimit: 20000            # Max karakter/bejegyzés
+  messageWindowSize: 20       # Elemzett üzenetek száma
+  validKeys:                  # Strukturált kategóriák
+    - "user_info"             # Név, cég, szerep
+    - "project_context"       # Projekt részletek
+    - "preferences"           # Preferenciák
+    - "business_info"         # Üzleti kontextus
+    - "action_items"          # Teendők, határidők
+  agent:
+    provider: "anthropic"
+    model: "claude-haiku-4-5-20251001"
+    instructions: |
+      Custom instructions for memory extraction...
+```
+
+### Működés
+
+1. Minden üzenet után a **Haiku** model elemzi az utolsó 20 üzenetet
+2. Releváns infókat kivonja és tárolja a `validKeys` kategóriákba
+3. Új chat indításakor a tárolt memóriák betöltődnek a system prompt-ba
+4. User a Settings → Personalization-ben ki/be kapcsolhatja
+
+### Költség
+
+- Memory agent (Haiku): ~$0.0005/üzenet
+- Minimális overhead (<5% a fő agent költségéhez képest)
+
+### Context Window
+
+Az agent **200k token** context window-t használ (Claude Opus 4.5 default).
+- ~100-150 üzenet + artifact-ok beleférnek
+- Ha túl hosszú a chat → régi üzenetek discard (de memory megmarad)
