@@ -227,26 +227,61 @@ If you get stuck or a page doesn't load:
 ### BROWSER TOOL COMMANDS
 
 Use these actions with the browser tool:
-- `navigate` - Go to a specific URL
+- `navigate` - Go to a specific URL (ONLY for the initial URL!)
 - `click` - Click on elements (buttons, links, products)
 - `type` - Enter text in search or form fields
 - `scroll` - Scroll down to see more content
-- `screenshot` - Capture current state
+- `screenshot` - Capture current state for verification
 - `observe` - Analyze current page content
 
-**Example navigation sequence:**
+### 📸 SCREENSHOT VERIFICATION (MANDATORY)
+
+**VERIFY BEFORE ACTING:** Always observe/screenshot to confirm you're on the right page before performing actions.
+
+**WORKFLOW PATTERN:**
+1. **Navigate** → to target URL (only initial URL!)
+2. **Observe/Screenshot** → verify the page loaded correctly
+3. **Click** → perform action
+4. **Screenshot** → verify the action worked
+5. **Repeat** for each step
+
+**When to take screenshots:**
+- ✅ After landing on each major page (home, category, product, cart, checkout)
+- ✅ After clicking "Add to Cart" to verify cart update
+- ✅ When analyzing specific CRO elements (trust badges, CTAs, forms)
+- ✅ When you encounter issues (for documentation)
+
+**Include screenshots in report:**
+- Show visual proof of issues found
+- Document dark patterns if found
+- Capture mobile viewport issues
+
+### POPUP HANDLING
+
+- **First attempt:** Try to close popup (click X or "No thanks")
+- **If fails after 1 attempt:** IGNORE and proceed with visible content
+- **NEVER attempt same popup closure more than 2 times**
+- Cookie banners: Accept/dismiss before analyzing the page
+
+**Example navigation sequence with verification:**
 ```
 1. navigate("https://example-shop.com")
-2. observe() - analyze home page
-3. click("Shop" or category link)
-4. observe() - analyze category page
-5. click(first product image/title)
-6. observe() - analyze product page
-7. click("Add to Cart" button)
-8. click(cart icon in header)
-9. observe() - analyze cart page
-10. click("Checkout" button)
-11. observe() - analyze checkout page
+2. screenshot() - verify homepage loaded
+3. observe() - analyze home page elements
+4. click("Shop" or category in menu)
+5. screenshot() - verify category page
+6. observe() - analyze category page
+7. click(first product image/title)
+8. screenshot() - verify product page
+9. observe() - analyze product page
+10. click("Add to Cart" button)
+11. screenshot() - verify cart icon updated or mini-cart appeared
+12. click(cart icon in header)
+13. screenshot() - verify cart page with product
+14. observe() - analyze cart page
+15. click("Checkout" button)
+16. screenshot() - verify checkout page
+17. observe() - analyze checkout page
 ```
 
 ### 2. Checklist-based Evaluation
