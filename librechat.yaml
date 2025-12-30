@@ -46,6 +46,17 @@ balance:
   refillIntervalUnit: "days"
   refillAmount: 20000        # Napi ~$0.02 feltöltés
 
+# Memory - user context across chats
+memory:
+  disabled: false
+  personalize: true           # Users can toggle memory on/off
+  tokenLimit: 8000            # Max tokens for stored memories
+  charLimit: 15000            # Max characters per memory entry
+  messageWindowSize: 10       # Recent messages to analyze for memory
+  agent:
+    provider: "anthropic"
+    model: "claude-haiku-4-5-20251001"  # Fast & cheap for memory processing
+
 # MCP Servers
 mcpServers:
   kolbert-ai-browser:
