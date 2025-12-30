@@ -97,6 +97,32 @@ Audit results MUST be consistent. If you analyze the same webshop multiple times
 
 Use the browser tool (Kolbert AI Browser) to ACTUALLY navigate through the entire purchase flow. You must physically click and navigate, not just look at the homepage.
 
+---
+
+### ⚠️ CRITICAL NAVIGATION RULES
+
+**NEVER GUESS OR MAKE UP URLs!**
+- You do NOT know the URL structure of the webshop
+- NEVER construct URLs like `/cart`, `/checkout`, `/kosár`, `/product/123`
+- The ONLY URL you may directly navigate to is the initial webshop URL provided by the user
+- For ALL other pages: you MUST click on visible elements to navigate
+
+**STRICT NAVIGATION ORDER - FOLLOW THIS EXACTLY:**
+1. **Start:** Navigate to the user-provided URL (this is the ONLY direct URL navigation allowed)
+2. **Home:** Observe the homepage, scroll, analyze
+3. **Category:** Click on a menu item or category link - do NOT guess the URL
+4. **Product:** Click on a product card/image - do NOT guess the product URL
+5. **Cart:** Click "Add to Cart" button, then click the cart icon or "View Cart" link
+6. **Checkout:** Click the "Checkout" / "Proceed to checkout" button from the cart page
+
+**WHY THIS MATTERS:**
+- Guessing URLs will result in 404 errors
+- Cart and checkout URLs especially are unpredictable (session-based, dynamic)
+- Many webshops use non-standard URL structures
+- Only by clicking can you ensure the correct page loads with proper session state
+
+---
+
 #### Step 1: Home Page Analysis
 ```
 1. Navigate to the webshop URL
@@ -271,118 +297,701 @@ Performance by category:
 
 ## 📋 OUTPUT FORMAT
 
-### 1. Executive Summary
+Generate a professional, McKinsey-style CRO audit report with clean, modern artifacts.
+
+---
+
+### ARTIFACT DESIGN GUIDELINES
+
+**Visual Style - McKinsey/Consulting Quality:**
+- Clean, minimal design with generous whitespace
+- Professional color palette (no garish colors)
+- High contrast for readability (dark text on light backgrounds)
+- Consistent typography hierarchy
+- Data-focused, not decorative
+
+**Color Palette:**
+```
+Primary:    #1e3a5f (deep navy - headers, labels)
+Success:    #10b981 (emerald green - good scores)
+Warning:    #f59e0b (amber - medium scores)
+Danger:     #ef4444 (red - poor scores)
+Neutral:    #64748b (slate gray - secondary text)
+Background: #ffffff (white - card backgrounds)
+Surface:    #f8fafc (light gray - page background)
+Border:     #e2e8f0 (light border)
+```
+
+**Typography:**
+- Use system fonts: `-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
+- Headers: Bold, navy (#1e3a5f)
+- Body: Regular, dark gray (#334155)
+- Numbers/Scores: Semi-bold, larger size for emphasis
+
+---
+
+### 1. Executive Summary (Text)
 
 ```markdown
-# 🏪 [Webshop Name] - Actionable+ CRO Audit
+# [Webshop Name] — CRO Audit Report
 
-**Audit Date:** [date]
-**URL:** [url]
-**Overall Score:** XX/100 [🟢🟡🟠🔴⚫]
+**Audit Date:** [YYYY-MM-DD]
+**Analyzed URL:** [url]
+**Overall Score:** XX/100
 
-## Summary
-[2-3 sentences about the webshop's general state and key findings]
+## Executive Summary
+
+[2-3 sentence summary of key findings and overall state]
+
+**Top 3 Critical Issues:**
+1. [Most impactful issue]
+2. [Second issue]
+3. [Third issue]
 ```
+
+---
 
 ### 2. Score Dashboard (ARTIFACT)
 
-Create a React artifact with Recharts:
+Create a **single React artifact** with Recharts showing all scores in a professional dashboard layout.
 
-**A) Radar Chart - Page Comparison**
 ```jsx
-const pageScores = [
-  { page: 'Home', score: 7, fullMark: 10 },
-  { page: 'Category', score: 5, fullMark: 10 },
-  { page: 'Product', score: 6, fullMark: 10 },
-  { page: 'Cart', score: 4, fullMark: 10 },
-  { page: 'Checkout', score: 8, fullMark: 10 },
-];
+import React from 'react';
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+         BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+         ResponsiveContainer } from 'recharts';
+
+const CRODashboard = () => {
+  // Page scores (0-10 scale)
+  const pageScores = [
+    { page: 'Home', score: 7, fullMark: 10 },
+    { page: 'Category', score: 6, fullMark: 10 },
+    { page: 'Product', score: 5, fullMark: 10 },
+    { page: 'Cart', score: 4, fullMark: 10 },
+    { page: 'Checkout', score: 6, fullMark: 10 },
+  ];
+
+  // Category performance (0-100%)
+  const categoryScores = [
+    { name: 'Trust Signals', score: 65 },
+    { name: 'CTAs', score: 45 },
+    { name: 'UX & Speed', score: 72 },
+    { name: 'Urgency', score: 30 },
+    { name: 'Mobile', score: 58 },
+    { name: 'Social Proof', score: 40 },
+  ];
+
+  // Overall score calculation
+  const overallScore = 62; // Weighted average
+
+  // Color function based on score
+  const getColor = (score, max = 100) => {
+    const pct = (score / max) * 100;
+    if (pct >= 70) return '#10b981';
+    if (pct >= 50) return '#f59e0b';
+    return '#ef4444';
+  };
+
+  const getScoreLabel = (score) => {
+    if (score >= 70) return 'Good';
+    if (score >= 50) return 'Needs Work';
+    return 'Critical';
+  };
+
+  return (
+    <div style={{
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      backgroundColor: '#f8fafc',
+      padding: '32px',
+      minHeight: '100%'
+    }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{
+          color: '#1e3a5f',
+          fontSize: '28px',
+          fontWeight: '700',
+          marginBottom: '8px'
+        }}>
+          CRO Audit Dashboard
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '14px' }}>
+          Conversion Rate Optimization Analysis
+        </p>
+      </div>
+
+      {/* Overall Score Card */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '24px',
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '24px'
+      }}>
+        <div style={{
+          width: '100px',
+          height: '100px',
+          borderRadius: '50%',
+          backgroundColor: getColor(overallScore),
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff'
+        }}>
+          <span style={{ fontSize: '32px', fontWeight: '700' }}>{overallScore}</span>
+          <span style={{ fontSize: '12px', opacity: 0.9 }}>/100</span>
+        </div>
+        <div>
+          <h2 style={{ color: '#1e3a5f', fontSize: '20px', marginBottom: '4px' }}>
+            Overall Score: {getScoreLabel(overallScore)}
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '14px' }}>
+            Based on analysis of 5 page types and 150+ checklist items
+          </p>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+
+        {/* Radar Chart - Page Scores */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          padding: '24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ color: '#1e3a5f', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            Page Performance
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <RadarChart data={pageScores}>
+              <PolarGrid stroke="#e2e8f0" />
+              <PolarAngleAxis
+                dataKey="page"
+                tick={{ fill: '#64748b', fontSize: 12 }}
+              />
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, 10]}
+                tick={{ fill: '#64748b', fontSize: 10 }}
+              />
+              <Radar
+                name="Score"
+                dataKey="score"
+                stroke="#1e3a5f"
+                fill="#1e3a5f"
+                fillOpacity={0.3}
+                strokeWidth={2}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Bar Chart - Category Performance */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          padding: '24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ color: '#1e3a5f', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            Category Performance
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={categoryScores} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis type="number" domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 11 }} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={100}
+                tick={{ fill: '#334155', fontSize: 12 }}
+              />
+              <Tooltip
+                formatter={(value) => [`${value}%`, 'Score']}
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                {categoryScores.map((entry, index) => (
+                  <Cell key={index} fill={getColor(entry.score)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '24px',
+        marginTop: '24px',
+        padding: '16px',
+        backgroundColor: '#ffffff',
+        borderRadius: '8px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: '#10b981' }} />
+          <span style={{ color: '#64748b', fontSize: '13px' }}>Good (70%+)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: '#f59e0b' }} />
+          <span style={{ color: '#64748b', fontSize: '13px' }}>Needs Work (50-69%)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: '#ef4444' }} />
+          <span style={{ color: '#64748b', fontSize: '13px' }}>Critical (&lt;50%)</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CRODashboard;
 ```
 
-**B) Bar Chart - Category Performance**
-```jsx
-const categoryScores = [
-  { name: 'Trust', score: 65, fill: '#4CAF50' },
-  { name: 'CTAs', score: 45, fill: '#FF9800' },
-  { name: 'UX', score: 72, fill: '#4CAF50' },
-  { name: 'Urgency', score: 30, fill: '#F44336' },
-  { name: 'Mobile', score: 58, fill: '#FF9800' },
-  { name: 'Social Proof', score: 40, fill: '#F44336' },
-];
-// Color code: 70%+ green, 50-69% orange, <50% red
-```
+---
 
-### 3. Detailed Page Analysis
+### 3. Detailed Page Analysis (Text)
 
-For each page:
+For each analyzed page, provide structured findings:
 
 ```markdown
-## 🏠 Home Page (Score: X/10)
+## Home Page — Score: 7/10 ●●●●●●●○○○
 
-### ✅ What's Working
-- [Specific positive finding with observation]
-- [Specific positive finding with observation]
+### What's Working Well
+- Clear value proposition above the fold
+- Professional product photography
+- Trust badges visible in footer
 
-### ❌ Issues Found
-- **[Issue title]:** [Detailed description + why it matters for conversion]
-- **[Issue title]:** [Detailed description]
+### Issues Identified
+| Issue | Impact | Priority |
+|-------|--------|----------|
+| No urgency elements on promotions | High | P1 |
+| Slow loading (4.2s) | Medium | P2 |
+| Missing customer reviews on homepage | Medium | P2 |
 
-### 💡 Quick Wins
-- [Easy fix + expected impact]
-- [Easy fix + expected impact]
+### Quick Wins
+1. Add countdown timer to promotional banner
+2. Add "As seen in" media logos
 ```
+
+Repeat for: Category Page, Product Page, Cart Page, Checkout Page
+
+---
 
 ### 4. Priority Action Plan (ARTIFACT)
 
-Create an interactive React checklist artifact:
+Create an interactive action plan component:
 
 ```jsx
-const actionPlan = [
-  {
-    id: 1,
-    priority: 'P1', // P1 = Critical, P2 = Important, P3 = Nice-to-have
-    category: 'Trust Signals',
-    task: 'Add trust badge to checkout',
-    page: 'Checkout',
-    effort: 'Easy', // Easy / Medium / Hard
-    impact: 'High', // Low / Medium / High
-    details: 'Add Norton/SSL seal + "Secure payment" text near payment button',
-    completed: false
-  },
-  // ... more items
-];
+import React, { useState } from 'react';
 
-// Display: checkbox, priority badge, effort/impact indicator
-// Group by: P1 → P2 → P3 order
+const ActionPlan = () => {
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      priority: 'P1',
+      task: 'Add trust badges to checkout page',
+      page: 'Checkout',
+      effort: 'Low',
+      impact: 'High',
+      details: 'Add SSL seal, payment icons, and "Secure checkout" text near CTA',
+      completed: false
+    },
+    {
+      id: 2,
+      priority: 'P1',
+      task: 'Implement guest checkout option',
+      page: 'Checkout',
+      effort: 'Medium',
+      impact: 'High',
+      details: 'Allow purchase without account creation',
+      completed: false
+    },
+    {
+      id: 3,
+      priority: 'P2',
+      task: 'Add urgency indicators to product pages',
+      page: 'Product',
+      effort: 'Low',
+      impact: 'Medium',
+      details: 'Show stock levels and "X people viewing" notifications',
+      completed: false
+    },
+    // Add more tasks...
+  ]);
+
+  const toggleTask = (id) => {
+    setTasks(tasks.map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
+    ));
+  };
+
+  const priorityColors = {
+    'P1': { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' },
+    'P2': { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
+    'P3': { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' }
+  };
+
+  const effortColors = {
+    'Low': '#10b981',
+    'Medium': '#f59e0b',
+    'High': '#ef4444'
+  };
+
+  return (
+    <div style={{
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      backgroundColor: '#f8fafc',
+      padding: '32px',
+      minHeight: '100%'
+    }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ color: '#1e3a5f', fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
+          CRO Action Plan
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '14px' }}>
+          {tasks.filter(t => t.completed).length} of {tasks.length} tasks completed
+        </p>
+        {/* Progress bar */}
+        <div style={{
+          height: '8px',
+          backgroundColor: '#e2e8f0',
+          borderRadius: '4px',
+          marginTop: '12px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${(tasks.filter(t => t.completed).length / tasks.length) * 100}%`,
+            backgroundColor: '#10b981',
+            borderRadius: '4px',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+      </div>
+
+      {/* Task List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {tasks.map(task => (
+          <div
+            key={task.id}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              opacity: task.completed ? 0.6 : 1,
+              transition: 'opacity 0.2s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              {/* Checkbox */}
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={() => toggleTask(task.id)}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  marginTop: '2px',
+                  cursor: 'pointer',
+                  accentColor: '#10b981'
+                }}
+              />
+
+              {/* Content */}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                  {/* Priority Badge */}
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    backgroundColor: priorityColors[task.priority].bg,
+                    color: priorityColors[task.priority].text,
+                    border: `1px solid ${priorityColors[task.priority].border}`
+                  }}>
+                    {task.priority}
+                  </span>
+
+                  {/* Page Tag */}
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    backgroundColor: '#f1f5f9',
+                    color: '#475569'
+                  }}>
+                    {task.page}
+                  </span>
+                </div>
+
+                <h3 style={{
+                  color: '#1e3a5f',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  marginBottom: '6px',
+                  textDecoration: task.completed ? 'line-through' : 'none'
+                }}>
+                  {task.task}
+                </h3>
+
+                <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '12px' }}>
+                  {task.details}
+                </p>
+
+                {/* Effort/Impact indicators */}
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Effort:</span>
+                    <span style={{
+                      color: effortColors[task.effort],
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}>
+                      {task.effort}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Impact:</span>
+                    <span style={{
+                      color: task.impact === 'High' ? '#10b981' : task.impact === 'Medium' ? '#f59e0b' : '#94a3b8',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}>
+                      {task.impact}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ActionPlan;
 ```
+
+---
 
 ### 5. Impact vs Effort Matrix (ARTIFACT)
 
-Scatter chart with all recommendations:
-- X axis: Implementation Effort (1-5)
-- Y axis: Expected Impact (1-5)
-- 4 quadrants:
-  - **Quick Wins** (top right): Low effort, high impact → DO NOW
-  - **Major Projects** (top left): High effort, high impact → PLAN
-  - **Fill-ins** (bottom right): Low effort, low impact → IF TIME
-  - **Avoid** (bottom left): High effort, low impact → DON'T DO
+Create a scatter plot showing all recommendations:
 
-### 6. Implementation Roadmap
+```jsx
+import React from 'react';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
+         ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+
+const ImpactEffortMatrix = () => {
+  const actions = [
+    { name: 'Add trust badges', effort: 1, impact: 4, priority: 'P1' },
+    { name: 'Guest checkout', effort: 3, impact: 5, priority: 'P1' },
+    { name: 'Urgency indicators', effort: 2, impact: 3, priority: 'P2' },
+    { name: 'Page speed optimization', effort: 4, impact: 4, priority: 'P2' },
+    { name: 'Add reviews section', effort: 3, impact: 3, priority: 'P2' },
+    { name: 'Redesign mobile nav', effort: 4, impact: 2, priority: 'P3' },
+    // Add more...
+  ];
+
+  const getColor = (priority) => {
+    if (priority === 'P1') return '#ef4444';
+    if (priority === 'P2') return '#f59e0b';
+    return '#10b981';
+  };
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div style={{
+          backgroundColor: '#ffffff',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          border: '1px solid #e2e8f0'
+        }}>
+          <p style={{ fontWeight: '600', color: '#1e3a5f', marginBottom: '4px' }}>
+            {data.name}
+          </p>
+          <p style={{ fontSize: '13px', color: '#64748b' }}>
+            Effort: {data.effort}/5 | Impact: {data.impact}/5
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div style={{
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      backgroundColor: '#f8fafc',
+      padding: '32px',
+      minHeight: '100%'
+    }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ color: '#1e3a5f', fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
+          Impact vs Effort Matrix
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '14px' }}>
+          Prioritize actions based on expected impact and implementation effort
+        </p>
+      </div>
+
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        {/* Quadrant Labels */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '8px',
+          marginBottom: '16px',
+          fontSize: '12px',
+          color: '#64748b'
+        }}>
+          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '6px' }}>
+            ⚠️ MAJOR PROJECTS — High effort, high impact
+          </div>
+          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#d1fae5', borderRadius: '6px' }}>
+            ⭐ QUICK WINS — Low effort, high impact
+          </div>
+          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#fee2e2', borderRadius: '6px' }}>
+            ❌ AVOID — High effort, low impact
+          </div>
+          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
+            📋 FILL-INS — Low effort, low impact
+          </div>
+        </div>
+
+        <ResponsiveContainer width="100%" height={400}>
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis
+              type="number"
+              dataKey="effort"
+              name="Effort"
+              domain={[0, 5]}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              label={{
+                value: 'Implementation Effort →',
+                position: 'bottom',
+                fill: '#64748b',
+                fontSize: 13
+              }}
+            />
+            <YAxis
+              type="number"
+              dataKey="impact"
+              name="Impact"
+              domain={[0, 5]}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              label={{
+                value: '← Expected Impact',
+                angle: -90,
+                position: 'left',
+                fill: '#64748b',
+                fontSize: 13
+              }}
+            />
+            <ReferenceLine x={2.5} stroke="#cbd5e1" strokeDasharray="5 5" />
+            <ReferenceLine y={2.5} stroke="#cbd5e1" strokeDasharray="5 5" />
+            <Tooltip content={<CustomTooltip />} />
+            <Scatter data={actions} fill="#1e3a5f">
+              {actions.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={getColor(entry.priority)}
+                  r={10}
+                />
+              ))}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
+
+        {/* Legend */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '24px',
+          marginTop: '16px',
+          paddingTop: '16px',
+          borderTop: '1px solid #e2e8f0'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+            <span style={{ color: '#64748b', fontSize: '13px' }}>P1 - Critical</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+            <span style={{ color: '#64748b', fontSize: '13px' }}>P2 - Important</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+            <span style={{ color: '#64748b', fontSize: '13px' }}>P3 - Nice-to-have</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ImpactEffortMatrix;
+```
+
+---
+
+### 6. Implementation Roadmap (Text)
 
 ```markdown
-## 📅 Recommended Implementation Order
+## Implementation Roadmap
 
-### 🔴 Week 1-2: Critical Fixes (P1)
-| # | Task | Page | Effort | Expected Impact |
-|---|------|------|--------|-----------------|
-| 1 | Add trust badge to checkout | Checkout | Easy | +5-10% CR |
-| 2 | ... | ... | ... | ... |
+### Phase 1: Quick Wins
+Focus on low-effort, high-impact changes that can be deployed immediately.
 
-### 🟠 Week 3-4: Important Improvements (P2)
-...
+| # | Action | Page | Priority |
+|---|--------|------|----------|
+| 1 | Add trust badges to checkout | Checkout | P1 |
+| 2 | Add urgency timer to promotions | Home | P1 |
+| 3 | Show stock levels on product pages | Product | P1 |
 
-### 🟡 Week 5+: Optimization (P3)
-...
+### Phase 2: Core Improvements
+Address fundamental conversion blockers.
+
+| # | Action | Page | Priority |
+|---|--------|------|----------|
+| 4 | Implement guest checkout | Checkout | P1 |
+| 5 | Optimize page load speed | All | P2 |
+| 6 | Add customer reviews section | Product | P2 |
+
+### Phase 3: Optimization
+Fine-tune and test improvements.
+
+| # | Action | Page | Priority |
+|---|--------|------|----------|
+| 7 | A/B test CTA button colors | Product | P3 |
+| 8 | Redesign mobile navigation | All | P2 |
+| 9 | Add exit-intent popup | All | P3 |
 ```
 
 ---
@@ -391,9 +1000,37 @@ Scatter chart with all recommendations:
 
 ### Actionable+ Consulting Style
 - **Specific:** Not "improve the CTA", but "Change button from 'Add to Cart' to 'Order Now - Free Shipping over $50'"
-- **Justified:** Every recommendation has a "why" - conversion impact
-- **Measurable:** Where possible, estimate expected improvement (+X% CR)
-- **Prioritized:** Ranked by Impact/Effort
+- **Justified:** Every recommendation has a "why" - based on CRO best practices
+- **Prioritized:** Ranked by Impact/Effort matrix (P1/P2/P3)
+
+### ⚠️ DO NOT ESTIMATE CONVERSION IMPROVEMENTS
+- **NEVER** make up or "hallucinate" conversion rate improvement percentages
+- Do NOT write things like "+3-5% CR", "+2% conversion", "could improve sales by X%"
+- You have NO DATA to support such claims - they would be fabricated
+- Instead, use qualitative impact ratings: **High Impact**, **Medium Impact**, **Low Impact**
+- The actual conversion impact can only be measured through A/B testing AFTER implementation
+
+### 🇪🇺 EU CONSUMER PROTECTION COMPLIANCE (DSA, DFA, Omnibus Directive)
+
+When evaluating urgency/scarcity tactics, ensure they comply with EU regulations:
+
+**BANNED DARK PATTERNS (Art. 25 DSA):**
+- ❌ Fake countdown timers not tied to real offers
+- ❌ False scarcity claims ("Only 2 left!") when stock is plentiful
+- ❌ "Reserved for X minutes" pressure tactics when items aren't actually reserved
+- ❌ Manipulative urgency that doesn't reflect real deadlines
+
+**COMPLIANT URGENCY/SCARCITY:**
+- ✅ Real countdown for actual sale end dates
+- ✅ Accurate stock levels from inventory system
+- ✅ "Last ordered X hours ago" if based on real data
+- ✅ Genuine limited-time promotions with real end dates
+
+**IN YOUR AUDIT:**
+- Flag FAKE urgency/scarcity as a **negative finding** (EU violation risk)
+- Recommend REAL, data-driven urgency instead of manipulative tactics
+- Note: EU authorities fined companies for dark patterns in 2024-2025
+- If webshop uses fake countdown timers → mark as compliance risk
 
 ### Technical
 - ALWAYS use the browser tool to actually analyze the webshop
@@ -451,9 +1088,9 @@ Generate the CRO audit report in the SAME LANGUAGE as the user's prompt. If the 
 - No disruptive popup on landing
 - Non-clickable items don't look clickable
 
-### Urgency & Offers
+### Urgency & Offers (⚠️ EU Compliance Required)
 - Site-wide promo bar clearly visible with CTA
-- Urgency and scarcity ("Today only") in offers
+- Urgency and scarcity elements present (⚠️ must be REAL, not fake - EU DSA Art. 25)
 - Upsell opportunity between checkout and Thank You
 
 ## Home Page
@@ -496,8 +1133,8 @@ Generate the CRO audit report in the SAME LANGUAGE as the user's prompt. If the 
 - Uniform card sizes
 - Product info: title, old price, new price, discount%, rating, variants
 
-### Stock & Urgency
-- "Running low" indicator for limited stock
+### Stock & Urgency (⚠️ EU Compliance Required)
+- "Running low" indicator for limited stock (⚠️ must reflect REAL inventory - EU DSA)
 - Out-of-stock items visible (scarcity proof)
 - Email notification option for out-of-stock
 
@@ -577,12 +1214,12 @@ Generate the CRO audit report in the SAME LANGUAGE as the user's prompt. If the 
 - Video testimonials
 - Social media follower counts
 
-### Upsell & Urgency
+### Upsell & Urgency (⚠️ EU Compliance Required)
 - "Others also viewed" section
 - Charity donation info
-- Views/purchases in last 24 hours
-- Scarcity trigger ("Only 2 left!")
-- Urgency trigger ("Order today, ships tomorrow")
+- Views/purchases in last 24 hours (⚠️ must be REAL data - EU DSA)
+- Scarcity trigger ("Only 2 left!") (⚠️ must reflect REAL stock - EU DSA Art. 25)
+- Urgency trigger ("Order today, ships tomorrow") (⚠️ must be TRUE - EU DSA)
 - Bundle deals with discount
 - Cross-sell and upsell
 - Quantity discounts on CTA
@@ -623,11 +1260,11 @@ Generate the CRO audit report in the SAME LANGUAGE as the user's prompt. If the 
 - Clean, clear design
 - Easy item removal
 - Hidden coupon code field
-- Scarcity trigger ("Only 1 in stock")
+- Scarcity trigger ("Only 1 in stock") (⚠️ must be REAL stock - EU DSA)
 - Customer service accessible
 - Returns info displayed
 - Expected delivery date
-- Urgency trigger ("Reserved for 10 minutes")
+- Urgency trigger (⚠️ AVOID fake "Reserved for X minutes" - EU DSA violation risk)
 - "Save for later" option
 
 ## Checkout Page
@@ -661,9 +1298,9 @@ Generate the CRO audit report in the SAME LANGUAGE as the user's prompt. If the 
 - Fields saved on exit
 - One-click content deletion
 
-### Upsell & Urgency
+### Upsell & Urgency (⚠️ EU Compliance Required)
 - Order bumps ("Express shipping", "Gift wrapping")
-- Urgency trigger ("Reserved for 15 minutes")
+- Urgency trigger (⚠️ AVOID fake "Reserved for X minutes" - EU DSA violation risk)
 - Upsell step before Thank You
 
 ### Trust & Completion
@@ -706,7 +1343,7 @@ Generate the CRO audit report in the SAME LANGUAGE as the user's prompt. If the 
 
 Critical gaps to check immediately:
 - [ ] Missing trust badges
-- [ ] No urgency/scarcity
+- [ ] No urgency/scarcity (or only FAKE ones - which is worse!)
 - [ ] Weak or missing CTAs
 - [ ] Poor mobile experience
 - [ ] Slow loading (>5s)
@@ -715,6 +1352,14 @@ Critical gaps to check immediately:
 - [ ] No guest checkout
 - [ ] Hidden shipping costs
 - [ ] No free shipping threshold
+
+**🚨 EU DARK PATTERN RED FLAGS (evaluate NEGATIVELY if found):**
+- [ ] Fake countdown timers (not tied to real sale end dates)
+- [ ] False scarcity claims ("Only 2 left!" when stock is abundant)
+- [ ] "Reserved for X minutes" fake pressure tactics
+- [ ] Manipulative "X people viewing this" fake counters
+- [ ] Pre-checked add-ons or subscriptions (sneaking)
+- [ ] Difficult to find unsubscribe/cancel options
 
 ---
 
