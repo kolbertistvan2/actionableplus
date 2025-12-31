@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ActionablePlus Premium Theme */
-@import './actionableplus-theme.css';
-
 /* Custom Variables */
 :root {
   --white: #fff;

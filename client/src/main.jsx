@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './locales/i18n';
 import App from './App';
 import './style.css';
+import './actionableplus-theme.css';
 import './mobile.css';
 import { ApiErrorBoundaryProvider } from './hooks/ApiErrorBoundaryContext';
 import 'katex/dist/katex.min.css';

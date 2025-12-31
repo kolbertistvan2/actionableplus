@@ -4,6 +4,12 @@ cache: true
 # Interface settings
 interface:
   bookmarks: false
+  privacyPolicy:
+    externalUrl: "/privacy-policy.html"
+    openNewTab: true
+  termsOfService:
+    externalUrl: "/terms-of-service.html"
+    openNewTab: true
 
 # Model configuration
 # - enforce: false = users can use any model, not just specs
