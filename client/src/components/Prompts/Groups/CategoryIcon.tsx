@@ -1,57 +1,44 @@
 import React from 'react';
 import {
-  Dices,
-  BoxIcon,
-  PenLineIcon,
-  LightbulbIcon,
-  LineChartIcon,
-  ShoppingBagIcon,
-  PlaneTakeoffIcon,
-  GraduationCapIcon,
-  TerminalSquareIcon,
-  // NEW: Add these for agent categories
-  Users as UsersIcon,
-  Beaker as BeakerIcon,
-  Settings as SettingsIcon,
+  Target,
+  BarChart3,
+  Megaphone,
+  Search,
+  Palette,
+  Compass,
+  TrendingUp,
+  Rocket,
+  Code,
+  Truck,
 } from 'lucide-react';
 import { cn } from '~/utils';
 
+// ActionablePlus E-commerce Consulting Category Icons
 const categoryIconMap: Record<string, React.ElementType> = {
-  misc: BoxIcon,
-  roleplay: Dices,
-  write: PenLineIcon,
-  idea: LightbulbIcon,
-  shop: ShoppingBagIcon,
-  finance: LineChartIcon,
-  code: TerminalSquareIcon,
-  travel: PlaneTakeoffIcon,
-  teach_or_explain: GraduationCapIcon,
-  // NEW: Agent categories
-  general: BoxIcon,
-  hr: UsersIcon,
-  rd: BeakerIcon,
-  it: TerminalSquareIcon,
-  sales: LineChartIcon,
-  aftersales: SettingsIcon,
+  cro: Target,
+  analytics: BarChart3,
+  marketing: Megaphone,
+  seo: Search,
+  ux: Palette,
+  market_research: Compass,
+  growth: TrendingUp,
+  gtm: Rocket,
+  technical: Code,
+  operations: Truck,
 };
 
+// ActionablePlus E-commerce Consulting Category Colors
 const categoryColorMap: Record<string, string> = {
-  code: 'text-red-500',
-  misc: 'text-blue-300',
-  shop: 'text-purple-400',
-  idea: 'text-yellow-500/90 dark:text-yellow-300 ',
-  write: 'text-purple-400',
-  travel: 'text-yellow-500/90 dark:text-yellow-300 ',
-  finance: 'text-orange-400',
-  roleplay: 'text-orange-400',
-  teach_or_explain: 'text-blue-300',
-  // NEW: Agent categories
-  general: 'text-blue-500',
-  hr: 'text-green-500',
-  rd: 'text-purple-500',
-  it: 'text-red-500',
-  sales: 'text-orange-500',
-  aftersales: 'text-yellow-500',
+  cro: 'text-red-500',
+  analytics: 'text-blue-500',
+  marketing: 'text-purple-500',
+  seo: 'text-green-500',
+  ux: 'text-pink-500',
+  market_research: 'text-cyan-500',
+  growth: 'text-emerald-500',
+  gtm: 'text-orange-500',
+  technical: 'text-slate-500',
+  operations: 'text-amber-500',
 };
 
 export default function CategoryIcon({

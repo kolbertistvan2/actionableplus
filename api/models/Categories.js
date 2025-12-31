@@ -1,41 +1,46 @@
 const { logger } = require('@librechat/data-schemas');
 
+// ActionablePlus E-commerce Consulting Categories
 const options = [
   {
-    label: 'com_ui_idea',
-    value: 'idea',
+    label: 'com_ui_cat_cro',
+    value: 'cro',
   },
   {
-    label: 'com_ui_travel',
-    value: 'travel',
+    label: 'com_ui_cat_analytics',
+    value: 'analytics',
   },
   {
-    label: 'com_ui_teach_or_explain',
-    value: 'teach_or_explain',
+    label: 'com_ui_cat_marketing',
+    value: 'marketing',
   },
   {
-    label: 'com_ui_write',
-    value: 'write',
+    label: 'com_ui_cat_seo',
+    value: 'seo',
   },
   {
-    label: 'com_ui_shop',
-    value: 'shop',
+    label: 'com_ui_cat_ux',
+    value: 'ux',
   },
   {
-    label: 'com_ui_code',
-    value: 'code',
+    label: 'com_ui_cat_market_research',
+    value: 'market_research',
   },
   {
-    label: 'com_ui_misc',
-    value: 'misc',
+    label: 'com_ui_cat_growth',
+    value: 'growth',
   },
   {
-    label: 'com_ui_roleplay',
-    value: 'roleplay',
+    label: 'com_ui_cat_gtm',
+    value: 'gtm',
   },
   {
-    label: 'com_ui_finance',
-    value: 'finance',
+    label: 'com_ui_cat_technical',
+    value: 'technical',
+  },
+  {
+    label: 'com_ui_cat_operations',
+    value: 'operations',
   },
 ];
 
