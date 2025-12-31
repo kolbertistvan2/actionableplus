@@ -1,0 +1,547 @@
+/**
+ * ActionablePlus Premium Theme
+ * E-commerce Consulting App - Luxury Editorial Design
+ *
+ * Design Direction: Refined luxury with subtle depth
+ * Color Accent: Emerald green (#10a37f / green-500)
+ * Typography: Plus Jakarta Sans (display) + system UI (body)
+ */
+
+/* ============================================
+   TYPOGRAPHY - Premium Font Stack
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ActionablePlus Brand Colors */
+  --ap-brand-primary: #10a37f;
+  --ap-brand-primary-light: #34d399;
+  --ap-brand-primary-dark: #047857;
+  --ap-brand-gradient: linear-gradient(135deg, #10a37f 0%, #047857 100%);
+
+  /* Premium Accent */
+  --ap-accent-gold: #d4af37;
+  --ap-accent-slate: #475569;
+
+  /* Enhanced Shadows */
+  --ap-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --ap-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --ap-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --ap-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --ap-shadow-glow: 0 0 20px rgba(16, 163, 127, 0.15);
+
+  /* Animation Timings */
+  --ap-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ap-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ap-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ap-transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dark mode shadow adjustments */
+.dark {
+  --ap-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --ap-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --ap-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --ap-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --ap-shadow-glow: 0 0 30px rgba(16, 163, 127, 0.2);
+}
+
+
+/* ============================================
+   GLOBAL TYPOGRAPHY IMPROVEMENTS
+   ============================================ */
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6,
+.font-semibold,
+.font-bold {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+
+/* ============================================
+   SIDEBAR / NAVIGATION ENHANCEMENTS
+   ============================================ */
+
+/* Sidebar background with subtle pattern */
+.nav.active {
+  background: linear-gradient(
+    180deg,
+    var(--surface-primary-alt) 0%,
+    var(--surface-secondary) 100%
+  );
+}
+
+.dark .nav.active {
+  background: linear-gradient(
+    180deg,
+    var(--gray-850) 0%,
+    var(--gray-900) 100%
+  );
+}
+
+/* New Chat button styling */
+nav button[data-testid="nav-new-chat-button"],
+nav a[data-testid="nav-new-chat-button"] {
+  background: var(--ap-brand-gradient) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  box-shadow: var(--ap-shadow-md), 0 0 0 0 rgba(16, 163, 127, 0);
+  transition: all var(--ap-transition-base) !important;
+}
+
+nav button[data-testid="nav-new-chat-button"]:hover,
+nav a[data-testid="nav-new-chat-button"]:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ap-shadow-lg), var(--ap-shadow-glow) !important;
+}
+
+nav button[data-testid="nav-new-chat-button"]:active,
+nav a[data-testid="nav-new-chat-button"]:active {
+  transform: translateY(0);
+}
+
+/* Conversation list items */
+nav a[data-testid^="convo-item"] {
+  border-radius: 10px !important;
+  transition: all var(--ap-transition-fast) !important;
+  margin: 2px 0;
+}
+
+nav a[data-testid^="convo-item"]:hover {
+  background-color: var(--surface-hover) !important;
+  transform: translateX(2px);
+}
+
+nav a[data-testid^="convo-item"].bg-surface-active {
+  background: linear-gradient(
+    90deg,
+    var(--surface-active) 0%,
+    var(--surface-active-alt) 100%
+  ) !important;
+  border-left: 3px solid var(--ap-brand-primary) !important;
+  padding-left: calc(0.75rem - 3px) !important;
+}
+
+.dark nav a[data-testid^="convo-item"].bg-surface-active {
+  background: linear-gradient(
+    90deg,
+    rgba(16, 163, 127, 0.15) 0%,
+    rgba(16, 163, 127, 0.05) 100%
+  ) !important;
+}
+
+/* Account settings button at bottom */
+nav button[id="user-menu"] {
+  border-radius: 12px !important;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+nav button[id="user-menu"]:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+
+/* ============================================
+   HEADER IMPROVEMENTS
+   ============================================ */
+
+/* Main header bar */
+.sticky.top-0.z-10 {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dark .sticky.top-0.z-10 {
+  background: rgba(33, 33, 33, 0.9) !important;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Model selector button */
+button[data-testid="model-selector"] {
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+button[data-testid="model-selector"]:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+
+/* ============================================
+   CHAT INPUT AREA
+   ============================================ */
+
+/* Main input container */
+form .rounded-t-3xl,
+form .sm\:rounded-3xl {
+  border-radius: 20px !important;
+  box-shadow: var(--ap-shadow-lg) !important;
+  border: 1px solid var(--border-medium) !important;
+  transition: all var(--ap-transition-base) !important;
+}
+
+form .rounded-t-3xl:focus-within,
+form .sm\:rounded-3xl:focus-within {
+  border-color: var(--ap-brand-primary) !important;
+  box-shadow: var(--ap-shadow-lg), 0 0 0 3px rgba(16, 163, 127, 0.1) !important;
+}
+
+/* Send button */
+button[data-testid="send-button"] {
+  background: var(--ap-brand-gradient) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+button[data-testid="send-button"]:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: var(--ap-shadow-md) !important;
+}
+
+button[data-testid="send-button"]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button[data-testid="send-button"]:disabled {
+  opacity: 0.5;
+  background: var(--surface-tertiary) !important;
+}
+
+/* Stop button */
+button[data-testid="stop-button"] {
+  border-radius: 10px !important;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+button[data-testid="stop-button"]:hover {
+  transform: scale(1.05);
+}
+
+
+/* ============================================
+   CHAT MESSAGES
+   ============================================ */
+
+/* Message container spacing */
+.message-content {
+  line-height: 1.7;
+}
+
+/* User message bubble enhancement */
+.bg-surface-secondary.rounded-3xl {
+  background: linear-gradient(
+    135deg,
+    var(--surface-secondary) 0%,
+    var(--surface-tertiary) 100%
+  ) !important;
+  box-shadow: var(--ap-shadow-sm);
+}
+
+.dark .bg-surface-secondary.rounded-3xl {
+  background: linear-gradient(
+    135deg,
+    var(--gray-700) 0%,
+    var(--gray-800) 100%
+  ) !important;
+}
+
+/* Code blocks in messages */
+.markdown pre {
+  border-radius: 12px !important;
+  border: 1px solid var(--border-light) !important;
+  box-shadow: var(--ap-shadow-sm) !important;
+}
+
+.dark .markdown pre {
+  border: 1px solid var(--border-medium) !important;
+}
+
+/* Inline code */
+.markdown code:not(pre code) {
+  background-color: var(--surface-tertiary) !important;
+  border-radius: 6px !important;
+  padding: 0.15em 0.4em !important;
+  font-size: 0.9em !important;
+}
+
+.dark .markdown code:not(pre code) {
+  background-color: var(--gray-700) !important;
+}
+
+/* Links in messages */
+.markdown a {
+  color: var(--ap-brand-primary) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid transparent;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+.markdown a:hover {
+  border-bottom-color: var(--ap-brand-primary);
+}
+
+
+/* ============================================
+   BUTTONS & INTERACTIVE ELEMENTS
+   ============================================ */
+
+/* Primary action buttons */
+button[class*="bg-green"],
+button[class*="bg-surface-submit"] {
+  background: var(--ap-brand-gradient) !important;
+  border: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  box-shadow: var(--ap-shadow-sm);
+  transition: all var(--ap-transition-fast) !important;
+}
+
+button[class*="bg-green"]:hover,
+button[class*="bg-surface-submit"]:hover {
+  box-shadow: var(--ap-shadow-md), var(--ap-shadow-glow);
+  transform: translateY(-1px);
+}
+
+/* Secondary/ghost buttons */
+button[class*="hover:bg-surface"] {
+  border-radius: 8px !important;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+/* Icon buttons */
+button svg {
+  transition: transform var(--ap-transition-fast);
+}
+
+button:hover svg {
+  transform: scale(1.05);
+}
+
+button:active svg {
+  transform: scale(0.95);
+}
+
+
+/* ============================================
+   DROPDOWNS & MENUS
+   ============================================ */
+
+[role="menu"],
+[role="listbox"],
+.radix-dropdown-menu-content {
+  border-radius: 12px !important;
+  box-shadow: var(--ap-shadow-xl) !important;
+  border: 1px solid var(--border-light) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: menuSlideIn var(--ap-transition-base) ease-out;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+[role="menuitem"],
+[role="option"] {
+  border-radius: 8px !important;
+  transition: all var(--ap-transition-fast) !important;
+}
+
+[role="menuitem"]:hover,
+[role="option"]:hover,
+[role="menuitem"]:focus,
+[role="option"]:focus {
+  background-color: var(--surface-hover) !important;
+}
+
+
+/* ============================================
+   DIALOGS & MODALS
+   ============================================ */
+
+[role="dialog"] > div {
+  border-radius: 16px !important;
+  box-shadow: var(--ap-shadow-xl), 0 0 60px rgba(0, 0, 0, 0.15) !important;
+  animation: dialogSlideIn var(--ap-transition-slow) ease-out;
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--gray-600);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) transparent;
+}
+
+.dark * {
+  scrollbar-color: var(--gray-600) transparent;
+}
+
+
+/* ============================================
+   LOADING & SKELETON STATES
+   ============================================ */
+
+.skeleton,
+[class*="animate-pulse"] {
+  background: linear-gradient(
+    90deg,
+    var(--surface-secondary) 0%,
+    var(--surface-tertiary) 50%,
+    var(--surface-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+
+/* ============================================
+   FOCUS STATES (Accessibility)
+   ============================================ */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ap-brand-primary) !important;
+  outline-offset: 2px !important;
+}
+
+
+/* ============================================
+   MOBILE RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  [role="button"],
+  [role="menuitem"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Simplified shadows on mobile for performance */
+  .sticky.top-0.z-10 {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  form .rounded-t-3xl,
+  form .sm\:rounded-3xl {
+    box-shadow: var(--ap-shadow-md) !important;
+  }
+}
+
+
+/* ============================================
+   REDUCED MOTION PREFERENCE
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .nav,
+  .sticky.top-0,
+  form,
+  button {
+    display: none !important;
+  }
+
+  .message-content {
+    page-break-inside: avoid;
+  }
+}
