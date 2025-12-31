@@ -159,6 +159,7 @@ const startServer = async () => {
 
   app.use('/api/tags', routes.tags);
   app.use('/api/mcp', routes.mcp);
+  app.use('/api/admin/usage', routes.adminUsage);
 
   app.use(ErrorController);
 

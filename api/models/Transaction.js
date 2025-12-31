@@ -203,6 +203,19 @@ async function createTransaction(_txData) {
   calculateTokenValue(transaction);
 
   await transaction.save();
+
+  // Structured logging for token usage tracking
+  logger.info('[TokenUsage]', {
+    userId: transaction.user?.toString(),
+    model: transaction.model,
+    tokenType: transaction.tokenType,
+    rawTokens: Math.abs(transaction.rawAmount || 0),
+    cost: Math.abs(transaction.tokenValue || 0),
+    rate: transaction.rate,
+    context: transaction.context,
+    conversationId: transaction.conversationId,
+  });
+
   if (!balance?.enabled) {
     return;
   }
@@ -239,6 +252,21 @@ async function createStructuredTransaction(_txData) {
   calculateStructuredTokenValue(transaction);
 
   await transaction.save();
+
+  // Structured logging for token usage tracking
+  logger.info('[TokenUsage]', {
+    userId: transaction.user?.toString(),
+    model: transaction.model,
+    tokenType: transaction.tokenType,
+    rawTokens: Math.abs(transaction.rawAmount || 0),
+    cost: Math.abs(transaction.tokenValue || 0),
+    rate: transaction.rate,
+    context: transaction.context,
+    conversationId: transaction.conversationId,
+    inputTokens: transaction.inputTokens,
+    writeTokens: transaction.writeTokens,
+    readTokens: transaction.readTokens,
+  });
 
   if (!balance?.enabled) {
     return;
