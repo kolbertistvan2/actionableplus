@@ -437,3 +437,50 @@ memory:
 Az agent **200k token** context window-t használ (Claude Opus 4.5 default).
 - ~100-150 üzenet + artifact-ok beleférnek
 - Ha túl hosszú a chat → régi üzenetek discard (de memory megmarad)
+
+## Agent System Prompts
+
+Agent system prompt-ok az `/agents` mappában találhatók.
+
+### Best Practices
+
+- **Write prompts in English** - models understand English better
+- **Response language** - output should match user's prompt language
+- **Reproducibility** - scoring/evaluation should be consistent across runs
+- **Binary evaluation** - yes/no, not "partially"
+
+### Available Agents
+
+| Agent | File | Description |
+|-------|------|-------------|
+| CRO Audit | `agents/cro-audit-agent.md` | E-commerce CRO audit with checklist |
+
+## Conversation Starters (Agent Builder Feature)
+
+Az Agent Builder-ben beállítható conversation starters, amelyek a chat indításakor kattintható gombok formájában jelennek meg.
+
+### Működés
+
+1. Agent Builder → "Conversation Starters" szekció
+2. Max 4 starter adható meg
+3. Gombok megjelennek új chat indításakor
+4. Kattintásra automatikusan elküldi az üzenetet
+
+### Lokalizáció
+
+A funkció 31 nyelvre le van fordítva (EN, HU, DE, stb.):
+
+| Kulcs | English | Magyar |
+|-------|---------|--------|
+| `com_assistants_conversation_starters` | Conversation Starters | Beszélgetésindítók |
+| `com_assistants_conversation_starters_placeholder` | Enter a conversation starter | Adjon meg egy beszélgetésindítót |
+| `com_assistants_max_starters_reached` | Max number of conversation starters reached | Max. beszélgetésindítók elérve |
+
+### Implementáció
+
+| File | Purpose |
+|------|---------|
+| `client/src/common/agents-types.ts` | `AgentForm.conversation_starters` type |
+| `client/src/components/SidePanel/Agents/AgentConfig.tsx` | UI komponens |
+| `client/src/components/SidePanel/Agents/AgentPanel.tsx` | Payload extraction |
+| `client/src/locales/*/translation.json` | Lokalizációs fájlok (31 nyelv) |
