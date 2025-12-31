@@ -455,6 +455,48 @@ Agent system prompt-ok az `/agents` mappában találhatók.
 |-------|------|-------------|
 | CRO Audit | `agents/cro-audit-agent.md` | E-commerce CRO audit with checklist |
 
+## Google OAuth Login
+
+Google login engedélyezéséhez állítsd be ezeket Railway environment variables-ban:
+
+```bash
+ALLOW_SOCIAL_LOGIN=true
+ALLOW_SOCIAL_REGISTRATION=true
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+GOOGLE_CALLBACK_URL=/oauth/google/callback
+```
+
+### Google Cloud Console Setup
+
+1. Menj a [Google Cloud Console](https://console.cloud.google.com)
+2. APIs & Services → Credentials → Create Credentials → OAuth client ID
+3. Application type: **Web application**
+4. Authorized redirect URIs: `https://app.actionableplus.com/oauth/google/callback`
+5. Másold ki a Client ID és Client Secret-et
+6. Add hozzá Railway Variables-hoz
+
+## Search (Meilisearch)
+
+A chat history search Meilisearch-et használ.
+
+### Local Development
+
+A `docker-compose.yml` tartalmazza a Meilisearch containert. Lokálisan automatikusan működik.
+
+```bash
+# .env beállítások (már be vannak állítva)
+SEARCH=true
+MEILI_HOST=http://meilisearch:7700
+MEILI_MASTER_KEY=<your-key>
+```
+
+### Railway Deployment
+
+Railway-en külön Meilisearch service kell:
+1. Add New → Database → Meilisearch
+2. Állítsd be a `MEILI_HOST` és `MEILI_MASTER_KEY` változókat az ActionablePlus service-ben
+
 ## Conversation Starters (Agent Builder Feature)
 
 Az Agent Builder-ben beállítható conversation starters, amelyek a chat indításakor kattintható gombok formájában jelennek meg.
