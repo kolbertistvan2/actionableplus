@@ -234,62 +234,14 @@ button {
    DROPDOWNS & MENUS
    ============================================ */
 
-[role="menu"],
-[role="listbox"],
-.radix-dropdown-menu-content {
-  border-radius: 12px !important;
-  box-shadow: var(--ap-shadow-xl) !important;
-  border: 1px solid var(--border-light) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: menuSlideIn var(--ap-transition-base) ease-out;
-}
-
-@keyframes menuSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-[role="menuitem"],
-[role="option"] {
-  border-radius: 8px !important;
-  transition: all var(--ap-transition-fast) !important;
-}
-
-[role="menuitem"]:hover,
-[role="option"]:hover,
-[role="menuitem"]:focus,
-[role="option"]:focus {
-  background-color: var(--surface-hover) !important;
-}
+/* Use default dropdown styling */
 
 
 /* ============================================
    DIALOGS & MODALS
    ============================================ */
 
-[role="dialog"] > div {
-  border-radius: 16px !important;
-  box-shadow: var(--ap-shadow-xl), 0 0 60px rgba(0, 0, 0, 0.15) !important;
-  animation: dialogSlideIn var(--ap-transition-slow) ease-out;
-}
-
-@keyframes dialogSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+/* Use default dialog styling */
 
 
 /* ============================================
