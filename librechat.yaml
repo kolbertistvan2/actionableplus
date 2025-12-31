@@ -39,12 +39,12 @@ endpoints:
 
 # Token Balance System
 balance:
-  enabled: false
-  startBalance: 50000        # ~$0.05 induló kredit új felhasználóknak
+  enabled: true
+  startBalance: 1000000      # $1.00 induló kredit új felhasználóknak
   autoRefillEnabled: true
   refillIntervalValue: 1
   refillIntervalUnit: "days"
-  refillAmount: 20000        # Napi ~$0.02 feltöltés
+  refillAmount: 100000       # Napi $0.10 feltöltés
 
 # Memory - persistent user context across chats
 memory:
