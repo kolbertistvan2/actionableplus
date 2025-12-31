@@ -1566,6 +1566,10 @@ export enum SettingsTabValues {
    * Tab for Personalization Settings
    */
   PERSONALIZATION = 'personalization',
+  /**
+   * Tab for Admin Usage Analytics (admin only)
+   */
+  ADMIN_USAGE = 'admin_usage',
 }
 
 export enum STTProviders {
