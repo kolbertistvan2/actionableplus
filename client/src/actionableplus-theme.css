@@ -86,30 +86,9 @@ h1, h2, h3, h4, h5, h6,
   );
 }
 
-/* New Chat button styling */
-nav button[data-testid="nav-new-chat-button"],
-nav a[data-testid="nav-new-chat-button"] {
-  background: var(--ap-brand-gradient) !important;
-  border: none !important;
-  color: white !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.01em;
-  box-shadow: var(--ap-shadow-md), 0 0 0 0 rgba(16, 163, 127, 0);
-  transition: all var(--ap-transition-base) !important;
-}
+/* New Chat button - use default styling */
 
-nav button[data-testid="nav-new-chat-button"]:hover,
-nav a[data-testid="nav-new-chat-button"]:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--ap-shadow-lg), var(--ap-shadow-glow) !important;
-}
-
-nav button[data-testid="nav-new-chat-button"]:active,
-nav a[data-testid="nav-new-chat-button"]:active {
-  transform: translateY(0);
-}
-
-/* Conversation list items */
+/* Conversation list items - subtle enhancements only */
 nav a[data-testid^="convo-item"] {
   border-radius: 10px !important;
   transition: all var(--ap-transition-fast) !important;
@@ -118,25 +97,6 @@ nav a[data-testid^="convo-item"] {
 
 nav a[data-testid^="convo-item"]:hover {
   background-color: var(--surface-hover) !important;
-  transform: translateX(2px);
-}
-
-nav a[data-testid^="convo-item"].bg-surface-active {
-  background: linear-gradient(
-    90deg,
-    var(--surface-active) 0%,
-    var(--surface-active-alt) 100%
-  ) !important;
-  border-left: 3px solid var(--ap-brand-primary) !important;
-  padding-left: calc(0.75rem - 3px) !important;
-}
-
-.dark nav a[data-testid^="convo-item"].bg-surface-active {
-  background: linear-gradient(
-    90deg,
-    rgba(16, 163, 127, 0.15) 0%,
-    rgba(16, 163, 127, 0.05) 100%
-  ) !important;
 }
 
 /* Account settings button at bottom */
@@ -369,15 +329,7 @@ button {
    FOCUS STATES (Accessibility)
    ============================================ */
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-[tabindex]:focus-visible {
-  outline: 2px solid var(--ap-brand-primary) !important;
-  outline-offset: 2px !important;
-}
+/* Use default focus styles */
 
 
 /* ============================================
