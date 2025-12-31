@@ -364,6 +364,12 @@ Performance by category:
 
 Generate a professional, McKinsey-style CRO audit report with clean, modern artifacts.
 
+**⚠️ CRITICAL: CREATE ONE SINGLE COMBINED ARTIFACT**
+- Do NOT create separate artifacts for Dashboard, Action Plan, and Matrix
+- Create ONE artifact that contains ALL visual elements on a single scrollable page
+- Use tabs or sections within the single artifact to organize content
+- This ensures all charts and data are visible together
+
 ---
 
 ### ARTIFACT DESIGN GUIDELINES
@@ -416,18 +422,21 @@ Border:     #e2e8f0 (light border)
 
 ---
 
-### 2. Score Dashboard (ARTIFACT)
+### 2. Complete CRO Report (SINGLE ARTIFACT)
 
-Create a **single React artifact** with Recharts showing all scores in a professional dashboard layout.
+Create **ONE React artifact** that contains ALL visual elements: Score Dashboard, Action Plan, and Impact Matrix - all on one scrollable page with tabs or sections.
 
 ```jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
          BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+         ScatterChart, Scatter, ReferenceLine,
          ResponsiveContainer } from 'recharts';
 
-const CRODashboard = () => {
-  // Page scores (0-10 scale)
+const CROAuditReport = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // ===== DATA (customize based on actual audit) =====
   const pageScores = [
     { page: 'Home', score: 7, fullMark: 10 },
     { page: 'Category', score: 6, fullMark: 10 },
@@ -436,7 +445,6 @@ const CRODashboard = () => {
     { page: 'Checkout', score: 6, fullMark: 10 },
   ];
 
-  // Category performance (0-100%)
   const categoryScores = [
     { name: 'Trust Signals', score: 65 },
     { name: 'CTAs', score: 45 },
@@ -446,10 +454,22 @@ const CRODashboard = () => {
     { name: 'Social Proof', score: 40 },
   ];
 
-  // Overall score calculation
-  const overallScore = 62; // Weighted average
+  const actions = [
+    { id: 1, priority: 'P1', task: 'Add trust badges to checkout', page: 'Checkout', effort: 'Low', impact: 'High' },
+    { id: 2, priority: 'P1', task: 'Implement guest checkout', page: 'Checkout', effort: 'Medium', impact: 'High' },
+    { id: 3, priority: 'P2', task: 'Add urgency indicators', page: 'Product', effort: 'Low', impact: 'Medium' },
+    // ... add more based on audit findings
+  ];
 
-  // Color function based on score
+  const matrixData = [
+    { name: 'Trust badges', effort: 1, impact: 4, priority: 'P1' },
+    { name: 'Guest checkout', effort: 3, impact: 5, priority: 'P1' },
+    { name: 'Urgency indicators', effort: 2, impact: 3, priority: 'P2' },
+    // ... add more based on audit findings
+  ];
+
+  const overallScore = 62;
+
   const getColor = (score, max = 100) => {
     const pct = (score / max) * 100;
     if (pct >= 70) return '#10b981';
@@ -457,12 +477,7 @@ const CRODashboard = () => {
     return '#ef4444';
   };
 
-  const getScoreLabel = (score) => {
-    if (score >= 70) return 'Good';
-    if (score >= 50) return 'Needs Work';
-    return 'Critical';
-  };
-
+  // ===== RENDER ALL SECTIONS IN ONE PAGE =====
   return (
     <div style={{
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -618,18 +633,89 @@ const CRODashboard = () => {
           <span style={{ color: '#64748b', fontSize: '13px' }}>Critical (&lt;50%)</span>
         </div>
       </div>
+
+      {/* ===== SECTION 2: ACTION PLAN ===== */}
+      <div style={{ marginTop: '48px' }}>
+        <h2 style={{ color: '#1e3a5f', fontSize: '24px', fontWeight: '700', marginBottom: '24px' }}>
+          Priority Action Plan
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {actions.map(task => (
+            <div key={task.id} style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              <span style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                backgroundColor: task.priority === 'P1' ? '#fef2f2' : '#fffbeb',
+                color: task.priority === 'P1' ? '#dc2626' : '#d97706'
+              }}>{task.priority}</span>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ color: '#1e3a5f', fontWeight: '600' }}>{task.task}</h4>
+                <span style={{ color: '#64748b', fontSize: '13px' }}>{task.page}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
+                <span>Effort: <strong style={{ color: task.effort === 'Low' ? '#10b981' : '#f59e0b' }}>{task.effort}</strong></span>
+                <span>Impact: <strong style={{ color: task.impact === 'High' ? '#10b981' : '#f59e0b' }}>{task.impact}</strong></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ===== SECTION 3: IMPACT/EFFORT MATRIX ===== */}
+      <div style={{ marginTop: '48px' }}>
+        <h2 style={{ color: '#1e3a5f', fontSize: '24px', fontWeight: '700', marginBottom: '24px' }}>
+          Impact vs Effort Matrix
+        </h2>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', fontSize: '12px' }}>
+            <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '6px' }}>⚠️ MAJOR PROJECTS</div>
+            <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#d1fae5', borderRadius: '6px' }}>⭐ QUICK WINS</div>
+            <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#fee2e2', borderRadius: '6px' }}>❌ AVOID</div>
+            <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>📋 FILL-INS</div>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis type="number" dataKey="effort" domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 12 }}
+                label={{ value: 'Effort →', position: 'bottom', fill: '#64748b' }} />
+              <YAxis type="number" dataKey="impact" domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 12 }}
+                label={{ value: '← Impact', angle: -90, position: 'left', fill: '#64748b' }} />
+              <ReferenceLine x={2.5} stroke="#cbd5e1" strokeDasharray="5 5" />
+              <ReferenceLine y={2.5} stroke="#cbd5e1" strokeDasharray="5 5" />
+              <Tooltip formatter={(value, name) => [value, name]} />
+              <Scatter data={matrixData}>
+                {matrixData.map((entry, index) => (
+                  <Cell key={index} fill={entry.priority === 'P1' ? '#ef4444' : entry.priority === 'P2' ? '#f59e0b' : '#10b981'} r={10} />
+                ))}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default CRODashboard;
+export default CROAuditReport;
 ```
+
+**IMPORTANT:** This is ONE artifact containing Dashboard + Action Plan + Matrix. Do NOT split into multiple artifacts.
 
 ---
 
 ### 3. Detailed Page Analysis (Text)
 
-For each analyzed page, provide structured findings:
+For each analyzed page, provide structured findings in your text response:
 
 ```markdown
 ## Home Page — Score: 7/10 ●●●●●●●○○○
@@ -655,378 +741,7 @@ Repeat for: Category Page, Product Page, Cart Page, Checkout Page
 
 ---
 
-### 4. Priority Action Plan (ARTIFACT)
-
-Create an interactive action plan component:
-
-```jsx
-import React, { useState } from 'react';
-
-const ActionPlan = () => {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      priority: 'P1',
-      task: 'Add trust badges to checkout page',
-      page: 'Checkout',
-      effort: 'Low',
-      impact: 'High',
-      details: 'Add SSL seal, payment icons, and "Secure checkout" text near CTA',
-      completed: false
-    },
-    {
-      id: 2,
-      priority: 'P1',
-      task: 'Implement guest checkout option',
-      page: 'Checkout',
-      effort: 'Medium',
-      impact: 'High',
-      details: 'Allow purchase without account creation',
-      completed: false
-    },
-    {
-      id: 3,
-      priority: 'P2',
-      task: 'Add urgency indicators to product pages',
-      page: 'Product',
-      effort: 'Low',
-      impact: 'Medium',
-      details: 'Show stock levels and "X people viewing" notifications',
-      completed: false
-    },
-    // Add more tasks...
-  ]);
-
-  const toggleTask = (id) => {
-    setTasks(tasks.map(t =>
-      t.id === id ? { ...t, completed: !t.completed } : t
-    ));
-  };
-
-  const priorityColors = {
-    'P1': { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' },
-    'P2': { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
-    'P3': { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' }
-  };
-
-  const effortColors = {
-    'Low': '#10b981',
-    'Medium': '#f59e0b',
-    'High': '#ef4444'
-  };
-
-  return (
-    <div style={{
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      backgroundColor: '#f8fafc',
-      padding: '32px',
-      minHeight: '100%'
-    }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ color: '#1e3a5f', fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
-          CRO Action Plan
-        </h1>
-        <p style={{ color: '#64748b', fontSize: '14px' }}>
-          {tasks.filter(t => t.completed).length} of {tasks.length} tasks completed
-        </p>
-        {/* Progress bar */}
-        <div style={{
-          height: '8px',
-          backgroundColor: '#e2e8f0',
-          borderRadius: '4px',
-          marginTop: '12px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            height: '100%',
-            width: `${(tasks.filter(t => t.completed).length / tasks.length) * 100}%`,
-            backgroundColor: '#10b981',
-            borderRadius: '4px',
-            transition: 'width 0.3s ease'
-          }} />
-        </div>
-      </div>
-
-      {/* Task List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {tasks.map(task => (
-          <div
-            key={task.id}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              padding: '20px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              opacity: task.completed ? 0.6 : 1,
-              transition: 'opacity 0.2s ease'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-              {/* Checkbox */}
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleTask(task.id)}
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  marginTop: '2px',
-                  cursor: 'pointer',
-                  accentColor: '#10b981'
-                }}
-              />
-
-              {/* Content */}
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  {/* Priority Badge */}
-                  <span style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    backgroundColor: priorityColors[task.priority].bg,
-                    color: priorityColors[task.priority].text,
-                    border: `1px solid ${priorityColors[task.priority].border}`
-                  }}>
-                    {task.priority}
-                  </span>
-
-                  {/* Page Tag */}
-                  <span style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    backgroundColor: '#f1f5f9',
-                    color: '#475569'
-                  }}>
-                    {task.page}
-                  </span>
-                </div>
-
-                <h3 style={{
-                  color: '#1e3a5f',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  marginBottom: '6px',
-                  textDecoration: task.completed ? 'line-through' : 'none'
-                }}>
-                  {task.task}
-                </h3>
-
-                <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '12px' }}>
-                  {task.details}
-                </p>
-
-                {/* Effort/Impact indicators */}
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Effort:</span>
-                    <span style={{
-                      color: effortColors[task.effort],
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      {task.effort}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Impact:</span>
-                    <span style={{
-                      color: task.impact === 'High' ? '#10b981' : task.impact === 'Medium' ? '#f59e0b' : '#94a3b8',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      {task.impact}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default ActionPlan;
-```
-
----
-
-### 5. Impact vs Effort Matrix (ARTIFACT)
-
-Create a scatter plot showing all recommendations:
-
-```jsx
-import React from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
-         ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-
-const ImpactEffortMatrix = () => {
-  const actions = [
-    { name: 'Add trust badges', effort: 1, impact: 4, priority: 'P1' },
-    { name: 'Guest checkout', effort: 3, impact: 5, priority: 'P1' },
-    { name: 'Urgency indicators', effort: 2, impact: 3, priority: 'P2' },
-    { name: 'Page speed optimization', effort: 4, impact: 4, priority: 'P2' },
-    { name: 'Add reviews section', effort: 3, impact: 3, priority: 'P2' },
-    { name: 'Redesign mobile nav', effort: 4, impact: 2, priority: 'P3' },
-    // Add more...
-  ];
-
-  const getColor = (priority) => {
-    if (priority === 'P1') return '#ef4444';
-    if (priority === 'P2') return '#f59e0b';
-    return '#10b981';
-  };
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div style={{
-          backgroundColor: '#ffffff',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <p style={{ fontWeight: '600', color: '#1e3a5f', marginBottom: '4px' }}>
-            {data.name}
-          </p>
-          <p style={{ fontSize: '13px', color: '#64748b' }}>
-            Effort: {data.effort}/5 | Impact: {data.impact}/5
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <div style={{
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      backgroundColor: '#f8fafc',
-      padding: '32px',
-      minHeight: '100%'
-    }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ color: '#1e3a5f', fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
-          Impact vs Effort Matrix
-        </h1>
-        <p style={{ color: '#64748b', fontSize: '14px' }}>
-          Prioritize actions based on expected impact and implementation effort
-        </p>
-      </div>
-
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        {/* Quadrant Labels */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '8px',
-          marginBottom: '16px',
-          fontSize: '12px',
-          color: '#64748b'
-        }}>
-          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '6px' }}>
-            ⚠️ MAJOR PROJECTS — High effort, high impact
-          </div>
-          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#d1fae5', borderRadius: '6px' }}>
-            ⭐ QUICK WINS — Low effort, high impact
-          </div>
-          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#fee2e2', borderRadius: '6px' }}>
-            ❌ AVOID — High effort, low impact
-          </div>
-          <div style={{ textAlign: 'center', padding: '8px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
-            📋 FILL-INS — Low effort, low impact
-          </div>
-        </div>
-
-        <ResponsiveContainer width="100%" height={400}>
-          <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis
-              type="number"
-              dataKey="effort"
-              name="Effort"
-              domain={[0, 5]}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              label={{
-                value: 'Implementation Effort →',
-                position: 'bottom',
-                fill: '#64748b',
-                fontSize: 13
-              }}
-            />
-            <YAxis
-              type="number"
-              dataKey="impact"
-              name="Impact"
-              domain={[0, 5]}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              label={{
-                value: '← Expected Impact',
-                angle: -90,
-                position: 'left',
-                fill: '#64748b',
-                fontSize: 13
-              }}
-            />
-            <ReferenceLine x={2.5} stroke="#cbd5e1" strokeDasharray="5 5" />
-            <ReferenceLine y={2.5} stroke="#cbd5e1" strokeDasharray="5 5" />
-            <Tooltip content={<CustomTooltip />} />
-            <Scatter data={actions} fill="#1e3a5f">
-              {actions.map((entry, index) => (
-                <Cell
-                  key={index}
-                  fill={getColor(entry.priority)}
-                  r={10}
-                />
-              ))}
-            </Scatter>
-          </ScatterChart>
-        </ResponsiveContainer>
-
-        {/* Legend */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '24px',
-          marginTop: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
-            <span style={{ color: '#64748b', fontSize: '13px' }}>P1 - Critical</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
-            <span style={{ color: '#64748b', fontSize: '13px' }}>P2 - Important</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-            <span style={{ color: '#64748b', fontSize: '13px' }}>P3 - Nice-to-have</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default ImpactEffortMatrix;
-```
-
----
-
-### 6. Implementation Roadmap (Text)
+### 4. Implementation Roadmap (Text)
 
 ```markdown
 ## Implementation Roadmap
