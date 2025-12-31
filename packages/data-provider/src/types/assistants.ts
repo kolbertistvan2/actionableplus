@@ -265,6 +265,7 @@ export type AgentCreateParams = {
   | 'recursion_limit'
   | 'category'
   | 'support_contact'
+  | 'conversation_starters'
 >;
 
 export type AgentUpdateParams = {
@@ -291,6 +292,7 @@ export type AgentUpdateParams = {
   | 'recursion_limit'
   | 'category'
   | 'support_contact'
+  | 'conversation_starters'
 >;
 
 export type AgentListParams = {
