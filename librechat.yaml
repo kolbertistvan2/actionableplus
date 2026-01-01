@@ -43,14 +43,14 @@ endpoints:
     # Enable native Google Search Grounding for Gemini models
     web_search: true
 
-# Token Balance System
-balance:
-  enabled: true
-  startBalance: 1000000      # $1.00 induló kredit új felhasználóknak
-  autoRefillEnabled: true
-  refillIntervalValue: 1
-  refillIntervalUnit: "days"
-  refillAmount: 100000       # Napi $0.10 feltöltés
+# Token Balance System - DISABLED
+# balance:
+#   enabled: true
+#   startBalance: 1000000      # $1.00 induló kredit új felhasználóknak
+#   autoRefillEnabled: true
+#   refillIntervalValue: 1
+#   refillIntervalUnit: "days"
+#   refillAmount: 100000       # Napi $0.10 feltöltés
 
 # Memory - persistent user context across chats
 memory:
