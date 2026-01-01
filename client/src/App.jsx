@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { RecoilRoot } from 'recoil';
 import { DndProvider } from 'react-dnd';
 import { RouterProvider } from 'react-router-dom';
@@ -16,33 +16,26 @@ import { router } from './routes';
 
 const App = () => {
   const { setError } = useApiErrorBoundary();
-  const errorHandlerRef = useRef(setError);
-  errorHandlerRef.current = setError;
 
-  // Stable QueryClient - created once and persisted across re-renders
-  const queryClientRef = useRef(null);
-  if (!queryClientRef.current) {
-    queryClientRef.current = new QueryClient({
-      defaultOptions: {
-        queries: {
-          // Always attempt network requests, even when navigator.onLine is false
-          // This is needed because localhost is reachable without WiFi
-          networkMode: 'always',
-        },
-        mutations: {
-          networkMode: 'always',
-        },
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Always attempt network requests, even when navigator.onLine is false
+        // This is needed because localhost is reachable without WiFi
+        networkMode: 'always',
       },
-      queryCache: new QueryCache({
-        onError: (error) => {
-          if (error?.response?.status === 401) {
-            errorHandlerRef.current(error);
-          }
-        },
-      }),
-    });
-  }
-  const queryClient = queryClientRef.current;
+      mutations: {
+        networkMode: 'always',
+      },
+    },
+    queryCache: new QueryCache({
+      onError: (error) => {
+        if (error?.response?.status === 401) {
+          setError(error);
+        }
+      },
+    }),
+  });
 
   useEffect(() => {
     initializeFontSize();
