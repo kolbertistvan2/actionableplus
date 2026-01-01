@@ -1,7 +1,6 @@
 const express = require('express');
 const { checkAdmin, requireJwtAuth } = require('~/server/middleware');
-const { Transaction, Balance } = require('~/db/models');
-const User = require('~/db/models/User');
+const { Transaction, Balance, User } = require('~/db/models');
 const { logger } = require('@librechat/data-schemas');
 
 const router = express.Router();
