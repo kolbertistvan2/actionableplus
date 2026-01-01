@@ -100,3 +100,11 @@ mcpServers:
     requiresOAuth: false
     title: "Image Generation"
     description: "Generate product images, ads, and banners with Gemini AI"
+  claude-skills:
+    type: streamable-http
+    url: https://skills-mcp-server-production.up.railway.app/mcp
+    timeout: 300000
+    initTimeout: 30000
+    requiresOAuth: false
+    title: "Claude Skills"
+    description: "Excel, PowerPoint, Word, PDF, Frontend Design, and more"
