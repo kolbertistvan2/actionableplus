@@ -215,6 +215,10 @@ export default function FavoritesList({
       queryFn: () => dataService.getAgentById({ agent_id: agentId }),
       staleTime: 1000 * 60 * 5,
       enabled: missingAgentIds.length > 0,
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
     })),
   });
 
