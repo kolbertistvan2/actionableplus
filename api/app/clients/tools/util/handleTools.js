@@ -343,7 +343,10 @@ Anchor pattern: \\ue202turn{N}{type}{index} where N=turn number, type=search|new
       };
       continue;
     } else if (tool && mcpToolPattern.test(tool)) {
-      const [toolName, serverName] = tool.split(Constants.mcp_delimiter);
+      // Use last element for serverName to handle tools with _mcp_ in their name (e.g., build_mcp_server)
+      const parts = tool.split(Constants.mcp_delimiter);
+      const serverName = parts[parts.length - 1];
+      const toolName = parts.slice(0, -1).join(Constants.mcp_delimiter);
       if (toolName === Constants.mcp_server) {
         /** Placeholder used for UI purposes */
         continue;

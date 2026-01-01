@@ -29,7 +29,9 @@ export function useVisibleTools(
     for (const toolId of selectedToolIds ?? []) {
       // MCP tools/servers
       if (toolId.includes(Constants.mcp_delimiter)) {
-        const serverName = toolId.split(Constants.mcp_delimiter)[1];
+        // Use last element to handle tools with _mcp_ in their name (e.g., build_mcp_server)
+        const parts = toolId.split(Constants.mcp_delimiter);
+        const serverName = parts[parts.length - 1];
         if (serverName) {
           mcpServers.add(serverName);
         }
