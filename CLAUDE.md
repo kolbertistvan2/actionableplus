@@ -193,6 +193,34 @@ Browser automation is fully integrated with Stagehand MCP:
 - **Auto-dismiss:** Thumbnail hides 5 seconds after browsing completes
 - **X button:** Manual dismiss on hover
 
+### Browser Session Isolation (Jan 2026)
+
+Browser sessions are isolated per conversation using Recoil atomFamily with `conversationId` keys.
+
+**Problem solved:** When running 2 browser sessions in parallel (different chats), the sessions were mixing - e.g., Photo Editor chat showing Zalando URL from CRO Audit chat.
+
+**Root cause:** `ToolCall.tsx` was using `useParams()` to get `conversationId` from URL. For new chats, URL has no conversationId, so all chats shared the same `''` key.
+
+**Solution:** Pass `conversationId` through props from message context, not URL.
+
+**Key changes:**
+
+| File | Change |
+|------|--------|
+| `ToolCall.tsx` | Accept `conversationId` prop, fall back to URL only if prop not provided |
+| `Part.tsx` | Pass `conversationId` prop to `ToolCall` |
+| `ContentParts.tsx` | Pass `conversationId` from MessageContext to `Part` |
+| `SearchContent.tsx` | Pass `message.conversationId` to `Part` |
+| `ChatForm.tsx` | Use `conversation?.conversationId` fallback for browser state keys |
+
+**Recoil state keys (properly isolated):**
+```typescript
+activeUIResourceFamily(conversationId)      // Browser resource per chat
+browserSidePanelOpenFamily(conversationId)  // Panel open state per chat
+browserThumbnailDismissedFamily(conversationId) // Thumbnail dismissed per chat
+currentBrowsedUrlFamily(conversationId)     // Current URL per chat
+```
+
 ### librechat.yaml MCP Config
 
 ```yaml
@@ -362,6 +390,54 @@ A chat üzenet "Copy to clipboard" gombja kiszűri az artifact blokkokat, így c
 // Regex: :::artifact{...} ... ::: blokkok eltávolítása
 text.replace(/:::artifact\{[^}]*\}[\s\S]*?\n:::\s*(?:\n|$)/g, '').trim()
 ```
+
+### Artifact Export - Smart Hybrid (Jan 2026)
+
+Az artifact export rendszer intelligensen exportálja a vizuális tartalmat (prezentációk, dashboardok) ahelyett, hogy nyers HTML kódot adna.
+
+**Problem solved:** PPTX/PDF export showed raw HTML source code ("Kód" slide with `<!DOCTYPE html>`) instead of the visual content.
+
+**Solution:** Smart Hybrid Export with 3 strategies:
+
+1. **Built-in Export Detection** - Ha az artifact tartalmaz beépített export függvényt (pl. `downloadPDF()`), azt hívjuk meg Sandpack iframe-en keresztül → pixel-perfect export
+2. **Presentation Type** - HTML prezentációkat felismeri és slide-onként exportálja PPTX-be
+3. **Fallback** - Egyéb tartalom a meglévő logikával
+
+**Key changes:**
+
+| File | Change |
+|------|--------|
+| `ExportDropdown.tsx` | Built-in export detection (`downloadPDF`, `exportToPDF`, etc.), Sandpack iframe integration |
+| `useArtifactExport.ts` | New `'presentation'` ContentType, `isPresentationContent()`, `extractSlidesFromHTML()` |
+| `Artifacts.tsx` | Pass `previewRef` to ExportDropdown for iframe access |
+
+**Built-in export patterns detected:**
+```typescript
+const BUILT_IN_EXPORT_PATTERNS = [
+  /function\s+(downloadPDF|exportToPDF|exportPresentation)\s*\(/,
+  /const\s+(downloadPDF|exportToPDF|exportPresentation)\s*=/,
+  /(?:window\.)?(downloadPDF|exportToPDF)\s*=\s*(?:function|\()/,
+];
+```
+
+**Presentation detection indicators:**
+```typescript
+const presentationIndicators = [
+  /class="slide"/i,
+  /class="presentation"/i,
+  /page-break-after:\s*always/i,
+  /downloadPDF|exportToPDF/i,
+];
+```
+
+**Export quality by type:**
+
+| Scenario | Method | Quality |
+|----------|--------|---------|
+| HTML with built-in export | Call `downloadPDF()` via iframe | ⭐⭐⭐⭐⭐ Pixel-perfect |
+| HTML presentation (no built-in) | Slide extraction → PPTX | ⭐⭐⭐⭐ Editable |
+| React dashboard | `parseReactDashboard()` | ⭐⭐⭐⭐ Data tables |
+| Other code | "Kód" slide | ⭐⭐ (intentional) |
 
 ## Footer Version Display
 
