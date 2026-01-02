@@ -87,6 +87,7 @@ const ContentParts = memo(function ContentParts({
             isCreatedByUser={isCreatedByUser}
             isLast={isLastPart}
             showCursor={isLastPart && isLast}
+            conversationId={conversationId ?? undefined}
           />
         </MessageContext.Provider>
       );

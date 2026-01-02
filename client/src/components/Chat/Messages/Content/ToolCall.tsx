@@ -69,6 +69,7 @@ export default function ToolCall({
   output,
   attachments,
   auth,
+  conversationId: propConversationId,
 }: {
   initialProgress: number;
   isLast?: boolean;
@@ -79,9 +80,12 @@ export default function ToolCall({
   attachments?: TAttachment[];
   auth?: string;
   expires_at?: number;
+  conversationId?: string;
 }) {
   const localize = useLocalize();
-  const { conversationId = '' } = useParams<{ conversationId: string }>();
+  const { conversationId: urlConversationId = '' } = useParams<{ conversationId: string }>();
+  // Use prop conversationId if provided (from message context), fall back to URL
+  const conversationId = propConversationId || urlConversationId;
   const setActiveUIResource = useSetRecoilState(activeUIResourceFamily(conversationId));
   const setCurrentBrowsedUrl = useSetRecoilState(currentBrowsedUrlFamily(conversationId));
   const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(conversationId));

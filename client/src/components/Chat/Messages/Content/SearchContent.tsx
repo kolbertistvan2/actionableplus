@@ -53,6 +53,7 @@ const SearchContent = ({
                 isCreatedByUser={message.isCreatedByUser}
                 attachments={attachments}
                 part={part}
+                conversationId={message.conversationId ?? undefined}
               />
             );
           })}

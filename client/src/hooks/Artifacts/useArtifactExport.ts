@@ -43,7 +43,7 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 // Content type detection
-type ContentType = 'table' | 'code' | 'markdown' | 'text' | 'react-dashboard';
+type ContentType = 'table' | 'code' | 'markdown' | 'text' | 'react-dashboard' | 'presentation';
 
 interface ExtractedDataset {
   name: string;
@@ -350,10 +350,14 @@ function getContentTypeFromArtifact(artifactType?: string): ContentType | null {
   if (artifactType === 'text/csv') return 'table';
   if (artifactType === 'text/plain') return 'text';
 
-  // Code types - always treat as code
+  // HTML and React types need content-based detection
+  // (could be presentation, dashboard, form, etc.)
+  if (artifactType.includes('html') || artifactType.includes('react')) {
+    return null; // Let parseContent() detect the actual type
+  }
+
+  // Other code types - always treat as code
   if (
-    artifactType.includes('react') ||
-    artifactType.includes('html') ||
     artifactType.includes('code') ||
     artifactType.includes('javascript') ||
     artifactType.includes('typescript') ||
@@ -367,6 +371,123 @@ function getContentTypeFromArtifact(artifactType?: string): ContentType | null {
   }
 
   return null; // Detection needed
+}
+
+/**
+ * Detect if HTML/React content is a presentation (slide deck)
+ * Looks for common presentation patterns
+ */
+function isPresentationContent(content: string): boolean {
+  const presentationIndicators = [
+    /class\s*=\s*["'][^"']*slide[^"']*["']/i, // class="slide" or class="slide-..."
+    /class\s*=\s*["'][^"']*presentation[^"']*["']/i, // class="presentation"
+    /page-break-after\s*:\s*always/i, // CSS for page breaks
+    /function\s+(downloadPDF|exportToPDF|exportPresentation)\s*\(/i, // Built-in export
+    /html2pdf/i, // html2pdf.js library
+    /slide-content|slide-header|slide-body|slide-footer/i, // Common slide classes
+    /slide-number|slide-title/i, // Slide number/title classes
+  ];
+
+  // Require at least 2 indicators for confident detection
+  let matchCount = 0;
+  for (const pattern of presentationIndicators) {
+    if (pattern.test(content)) {
+      matchCount++;
+      if (matchCount >= 2) return true;
+    }
+  }
+
+  // Also detect if there are multiple "slide" divs
+  const slideMatches = content.match(/<div[^>]*class\s*=\s*["'][^"']*\bslide\b[^"']*["'][^>]*>/gi);
+  if (slideMatches && slideMatches.length >= 3) {
+    return true;
+  }
+
+  return false;
+}
+
+interface ExtractedSlide {
+  title: string;
+  bullets: string[];
+}
+
+/**
+ * Extract slides from HTML presentation content
+ * Parses slide divs and extracts titles and bullet points
+ */
+function extractSlidesFromHTML(html: string): ExtractedSlide[] {
+  const slides: ExtractedSlide[] = [];
+
+  // Find all slide divs - capture content between them
+  // Using a simpler approach: split by slide class divs
+  const slideRegex = /<div[^>]*class\s*=\s*["'][^"']*\bslide\b[^"']*["'][^>]*>([\s\S]*?)(?=<div[^>]*class\s*=\s*["'][^"']*\bslide\b|$)/gi;
+
+  let match;
+  while ((match = slideRegex.exec(html)) !== null) {
+    const slideContent = match[1] || '';
+
+    // Extract title from various patterns
+    let title = '';
+
+    // Try slide-title class
+    const slideTitleMatch = slideContent.match(/<[^>]*class\s*=\s*["'][^"']*slide-title[^"']*["'][^>]*>([^<]+)/i);
+    if (slideTitleMatch) {
+      title = slideTitleMatch[1].trim();
+    }
+
+    // Try h2 tag
+    if (!title) {
+      const h2Match = slideContent.match(/<h2[^>]*>([^<]+)/i);
+      if (h2Match) {
+        title = h2Match[1].trim();
+      }
+    }
+
+    // Try cover-title class
+    if (!title) {
+      const coverTitleMatch = slideContent.match(/<[^>]*class\s*=\s*["'][^"']*cover-title[^"']*["'][^>]*>([^<]+)/i);
+      if (coverTitleMatch) {
+        title = coverTitleMatch[1].trim();
+      }
+    }
+
+    // Extract bullets from li elements
+    const bullets: string[] = [];
+    const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+    let liMatch;
+    while ((liMatch = liRegex.exec(slideContent)) !== null) {
+      // Clean HTML tags from the li content
+      let bulletText = liMatch[1]
+        .replace(/<[^>]+>/g, ' ') // Remove HTML tags
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+
+      if (bulletText && bulletText.length > 0 && bulletText.length < 500) {
+        bullets.push(bulletText);
+      }
+    }
+
+    // Also extract text from stat-card, kpi-section, etc.
+    const valueRegex = /<[^>]*class\s*=\s*["'][^"']*(?:value|stat-card|kpi)[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/gi;
+    let valueMatch;
+    while ((valueMatch = valueRegex.exec(slideContent)) !== null) {
+      const valueText = valueMatch[1]
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (valueText && valueText.length > 0 && valueText.length < 200 && !bullets.includes(valueText)) {
+        bullets.push(valueText);
+      }
+    }
+
+    // Only add slides with some content
+    if (title || bullets.length > 0) {
+      slides.push({ title, bullets: bullets.slice(0, 10) }); // Limit bullets per slide
+    }
+  }
+
+  return slides;
 }
 
 /**
@@ -577,6 +698,18 @@ function parseContent(content: string, artifactType?: string): ParsedContent {
     };
   }
 
+  // Special case: HTML/React presentations (slide decks)
+  // Check BEFORE code detection to avoid treating presentations as code
+  if (isPresentationContent(cleaned)) {
+    return {
+      type: 'presentation',
+      rows: [],
+      text: cleaned,
+      headings: [],
+      listItems: [],
+    };
+  }
+
   // First: try to get explicit type from artifact.type
   const explicitType = getContentTypeFromArtifact(artifactType);
 
@@ -683,6 +816,8 @@ function getRecommendedFormats(contentType: ContentType): ExportFormat[] {
       return ['pdf', 'docx', 'pptx'];
     case 'react-dashboard':
       return ['pdf', 'xlsx', 'pptx']; // Dashboard data exports
+    case 'presentation':
+      return ['pdf', 'pptx']; // Presentation exports - PDF (built-in) preferred
     default:
       return ['txt', 'pdf'];
   }
@@ -1852,6 +1987,78 @@ export function useArtifactExport() {
           break;
         }
 
+        case 'presentation': {
+          // HTML presentation - extract slides from HTML structure
+          const slides = extractSlidesFromHTML(parsed.text);
+
+          if (slides.length === 0) {
+            // Fallback: create a single slide with info
+            const infoSlide = pptx.addSlide();
+            infoSlide.addText('Prezentáció', {
+              x: 0.5,
+              y: 0.3,
+              w: 9,
+              h: 0.6,
+              fontSize: 28,
+              bold: true,
+              color: '1E293B',
+            });
+            infoSlide.addText('A prezentáció beépített PDF exporttal rendelkezik.\nHasználd a "PDF Letöltés" gombot az artifact-ban a legjobb minőségért.', {
+              x: 0.5,
+              y: 2,
+              w: 9,
+              h: 2,
+              fontSize: 16,
+              color: '64748B',
+              align: 'center',
+            });
+          } else {
+            // Create slides from extracted content
+            slides.forEach((slide, index) => {
+              const pptxSlide = pptx.addSlide();
+
+              // Slide number
+              pptxSlide.addText(`${index + 1} / ${slides.length}`, {
+                x: 0.5,
+                y: 0.2,
+                w: 2,
+                h: 0.3,
+                fontSize: 10,
+                color: '94A3B8',
+              });
+
+              // Slide title
+              if (slide.title) {
+                pptxSlide.addText(slide.title, {
+                  x: 0.5,
+                  y: 0.5,
+                  w: 9,
+                  h: 0.7,
+                  fontSize: 28,
+                  bold: true,
+                  color: '1E293B',
+                });
+              }
+
+              // Content bullets
+              if (slide.bullets.length > 0) {
+                const bulletText = slide.bullets.map((b) => `• ${b}`).join('\n');
+                pptxSlide.addText(bulletText, {
+                  x: 0.5,
+                  y: slide.title ? 1.4 : 0.5,
+                  w: 9,
+                  h: 4,
+                  fontSize: 16,
+                  color: '374151',
+                  valign: 'top',
+                  lineSpacingMultiple: 1.4,
+                });
+              }
+            });
+          }
+          break;
+        }
+
         default: {
           // Plain text - split into slides
           const lines = parsed.text.split('\n').filter((l) => l.trim());
@@ -1926,5 +2133,5 @@ export function useArtifactExport() {
     return getRecommendedFormats(parsed.type);
   }, []);
 
-  return { exportArtifact, getRecommendedFormatsForContent, status, error };
+  return { exportArtifact, getRecommendedFormatsForContent, status, setStatus, error };
 }

@@ -68,10 +68,12 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     store.showMentionPopoverFamily(index),
   );
 
-  // Browser preview state
-  const activeUIResource = useRecoilValue(activeUIResourceFamily(convId));
-  const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(convId));
-  const [isThumbnailDismissed, setIsThumbnailDismissed] = useRecoilState(browserThumbnailDismissedFamily(convId));
+  // Browser preview state - use conversation.conversationId for proper isolation
+  // When convId (from URL) is empty (new chat), fall back to conversation context
+  const browserConversationId = convId || conversation?.conversationId || '';
+  const activeUIResource = useRecoilValue(activeUIResourceFamily(browserConversationId));
+  const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(browserConversationId));
+  const [isThumbnailDismissed, setIsThumbnailDismissed] = useRecoilState(browserThumbnailDismissedFamily(browserConversationId));
 
   const { requiresKey } = useRequiresKey();
   const methods = useChatFormContext();
@@ -250,7 +252,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
               resource={activeUIResource}
               isActive={isSubmitting}
               onClick={() => setIsBrowserPanelOpen(true)}
-              conversationId={convId}
+              conversationId={browserConversationId}
               onDismiss={() => setIsThumbnailDismissed(true)}
             />
           </div>
@@ -360,7 +362,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
               </div>
               {/* Browser toggle button - always visible when session exists */}
               <BrowserToggleButton
-                conversationId={convId}
+                conversationId={browserConversationId}
                 isActive={isSubmitting}
                 onClick={() => setIsBrowserPanelOpen(true)}
                 disabled={disableInputs}

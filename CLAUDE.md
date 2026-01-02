@@ -526,3 +526,30 @@ A funkció 31 nyelvre le van fordítva (EN, HU, DE, stb.):
 | `client/src/components/SidePanel/Agents/AgentConfig.tsx` | UI komponens |
 | `client/src/components/SidePanel/Agents/AgentPanel.tsx` | Payload extraction |
 | `client/src/locales/*/translation.json` | Lokalizációs fájlok (31 nyelv) |
+
+## Railway Rollback - Stable Commits
+
+Ha problémás a deploy, Railway dashboard-on visszaállítható egy korábbi stabil verzióra:
+
+1. Railway Dashboard → Service → **Deployments** tab
+2. Válaszd ki a működő deploy-t
+3. Kattints a **Redeploy** gombra
+
+### Utolsó ismert stabil commit-ok:
+
+| Commit | Dátum | Leírás |
+|--------|-------|--------|
+| `7e377ddd` | Dec 31 | 🐛 fix: Prevent QueryClient recreation on re-renders |
+| `5b7f626c` | Dec 31 | 🔧 fix: Simplify theme CSS to font-only |
+
+### Admin Usage Feature - INSTABIL (NE HASZNÁLD)
+
+A `666555f4` és `2206c040` commit-ok Admin Usage Analytics funkciót adtak hozzá, de ez **stream 404 hibákat okoz** minden chat-ben. Ha véletlenül deploy-oltad:
+
+1. Railway → Deployments → válaszd a `7e377ddd` előtti deploy-t
+2. Redeploy
+
+**Tünetek:**
+- "Stream not found (404) - job completed or expired"
+- "Stream error (network failure) - will attempt reconnect"
+- Chat nem működik semmilyen modellel/agent-tel
