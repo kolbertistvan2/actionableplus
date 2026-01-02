@@ -15,6 +15,7 @@ const { processFileCitations } = require('~/server/services/Files/Citations');
 const { processCodeOutput } = require('~/server/services/Files/Code/process');
 const { loadAuthValues } = require('~/server/services/Tools/credentials');
 const { saveBase64Image } = require('~/server/services/Files/process');
+const { updateFile } = require('~/models');
 
 class ModelEndHandler {
   /**
@@ -131,6 +132,10 @@ class ModelEndHandler {
                   endpoint: agentContext.provider,
                   context: FileContext.image_generation,
                 });
+                // Persist conversationId to MongoDB so generated images can be queried later
+                if (metadata.thread_id && file?.file_id) {
+                  await updateFile({ file_id: file.file_id, conversationId: metadata.thread_id });
+                }
                 const fileMetadata = Object.assign(file, {
                   messageId: metadata.run_id,
                   conversationId: metadata.thread_id,
@@ -484,6 +489,10 @@ function createToolEndCallback({ req, res, artifactPromises, streamId = null }) 
               endpoint: metadata.provider,
               context: FileContext.image_generation,
             });
+            // Persist conversationId to MongoDB so generated images can be queried later
+            if (metadata.thread_id && file?.file_id) {
+              await updateFile({ file_id: file.file_id, conversationId: metadata.thread_id });
+            }
             const fileMetadata = Object.assign(file, {
               messageId: metadata.run_id,
               toolCallId: output.tool_call_id,
