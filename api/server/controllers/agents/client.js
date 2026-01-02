@@ -31,6 +31,7 @@ const {
 } = require('@librechat/agents');
 const {
   Constants,
+  FileContext,
   Permissions,
   VisionModes,
   ContentTypes,
@@ -311,14 +312,15 @@ class AgentClient extends BaseClient {
     // Call parent method first
     await super.addFileContextToMessage(message, attachments);
 
-    // Add image URLs to fileContext so MCP tools can access them
+    const baseUrl = process.env.DOMAIN_SERVER || process.env.DOMAIN_CLIENT || '';
+
+    // Add uploaded image URLs to fileContext so MCP tools can access them
     const imageAttachments = attachments.filter((f) => f.type?.startsWith('image/'));
     if (imageAttachments.length > 0) {
       const imageUrls = imageAttachments
         .filter((f) => f.filepath)
         .map((f) => {
           // Build public URL from filepath
-          const baseUrl = process.env.DOMAIN_SERVER || process.env.DOMAIN_CLIENT || '';
           const publicUrl = f.filepath.startsWith('http') ? f.filepath : `${baseUrl}${f.filepath}`;
           return `- ${f.filename}: ${publicUrl}`;
         });
@@ -326,6 +328,35 @@ class AgentClient extends BaseClient {
       if (imageUrls.length > 0) {
         const imageContext = `\n\nUploaded image URLs (use these with edit_image/analyze_image tools):\n${imageUrls.join('\n')}`;
         message.fileContext = (message.fileContext || '') + imageContext;
+      }
+    }
+
+    // Add previously generated images from this conversation
+    // These are stored in File collection with context: image_generation
+    const conversationId = this.options.conversationId;
+    if (conversationId) {
+      try {
+        const generatedImages = await db.getFiles({
+          conversationId,
+          context: FileContext.image_generation,
+          type: { $regex: /^image\// },
+        });
+
+        if (generatedImages.length > 0) {
+          const generatedUrls = generatedImages
+            .filter((f) => f.filepath)
+            .map((f) => {
+              const publicUrl = f.filepath.startsWith('http') ? f.filepath : `${baseUrl}${f.filepath}`;
+              return `- ${f.filename}: ${publicUrl}`;
+            });
+
+          if (generatedUrls.length > 0) {
+            const generatedContext = `\n\nPreviously generated images in this conversation (use with edit_image tool):\n${generatedUrls.join('\n')}`;
+            message.fileContext = (message.fileContext || '') + generatedContext;
+          }
+        }
+      } catch (error) {
+        logger.error('[AgentClient] Error fetching generated images:', error);
       }
     }
   }
