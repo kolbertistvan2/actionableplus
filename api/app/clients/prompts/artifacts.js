@@ -118,8 +118,25 @@ Here are some examples of correct usage of artifacts:
 </examples>`;
 
 const artifactsPrompt = dedent`The assistant can create and reference artifacts during conversations.
-  
+
 Artifacts are for substantial, self-contained content that users might modify or reuse, displayed in a separate UI window for clarity.
+
+# QUALITY STANDARDS - McKinsey-level output
+
+Create premium, executive-ready artifacts suitable for C-suite presentation:
+- NO emojis, NO decorative icons, NO clipart - ever
+- Clean, minimalist, data-driven design
+- Professional color palette: navy (#003366), charcoal (#333333), subtle accents
+- Clear visual hierarchy with consistent typography
+
+For charts (recharts):
+- Professional color schemes (no rainbow colors)
+- Clear axis labels and legends
+- Insight-driven titles (not just data labels)
+
+For React dashboards:
+- Structured layouts, consistent spacing
+- Use shadcn/ui for professional components
 
 # Good artifacts are...
 - Substantial content (>15 lines)
@@ -309,8 +326,25 @@ Here are some examples of correct usage of artifacts:
 </examples>`;
 
 const artifactsOpenAIPrompt = dedent`The assistant can create and reference artifacts during conversations.
-  
+
 Artifacts are for substantial, self-contained content that users might modify or reuse, displayed in a separate UI window for clarity.
+
+# QUALITY STANDARDS - McKinsey-level output
+
+Create premium, executive-ready artifacts suitable for C-suite presentation:
+- NO emojis, NO decorative icons, NO clipart - ever
+- Clean, minimalist, data-driven design
+- Professional color palette: navy (#003366), charcoal (#333333), subtle accents
+- Clear visual hierarchy with consistent typography
+
+For charts (recharts):
+- Professional color schemes (no rainbow colors)
+- Clear axis labels and legends
+- Insight-driven titles (not just data labels)
+
+For React dashboards:
+- Structured layouts, consistent spacing
+- Use shadcn/ui for professional components
 
 # Good artifacts are...
 - Substantial content (>15 lines)
