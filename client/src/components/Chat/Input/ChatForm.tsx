@@ -195,16 +195,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     }
   }, [activeUIResource?.uri, setIsThumbnailDismissed]);
 
-  // Auto-hide thumbnail 5 seconds after browsing completes
-  useEffect(() => {
-    if (!isSubmitting && activeUIResource && !isThumbnailDismissed && !isBrowserPanelOpen) {
-      const timer = setTimeout(() => {
-        setIsThumbnailDismissed(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isSubmitting, activeUIResource, isThumbnailDismissed, isBrowserPanelOpen, setIsThumbnailDismissed]);
-
   const handleSaveBadges = useCallback(() => {
     setIsEditingBadges(false);
     setBackupBadges([]);
