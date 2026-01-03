@@ -42,6 +42,25 @@ endpoints:
   google:
     # Enable native Google Search Grounding for Gemini models
     web_search: true
+  custom:
+    - name: "Perplexity"
+      apiKey: "${PERPLEXITY_API_KEY}"
+      baseURL: "https://api.perplexity.ai/"
+      models:
+        default:
+          - "sonar-deep-research"
+          - "sonar-reasoning-pro"
+          - "sonar-reasoning"
+          - "sonar-pro"
+          - "sonar"
+          - "r1-1776"
+        fetch: false
+      titleConvo: true
+      titleModel: "sonar"
+      summarize: false
+      forcePrompt: false
+      dropParams: ["stop", "frequency_penalty"]
+      modelDisplayLabel: "Perplexity"
 
 # Token Balance System - DISABLED
 # balance:
