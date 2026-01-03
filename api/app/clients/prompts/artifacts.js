@@ -123,20 +123,44 @@ Artifacts are for substantial, self-contained content that users might modify or
 
 # QUALITY STANDARDS - McKinsey-level output
 
-Create premium, executive-ready artifacts suitable for C-suite presentation:
-- NO emojis, NO decorative icons, NO clipart - ever
-- Clean, minimalist, data-driven design
-- Professional color palette: navy (#003366), charcoal (#333333), subtle accents
-- Clear visual hierarchy with consistent typography
+ABSOLUTE DESIGN RULES (NO EXCEPTIONS):
+
+1. BACKGROUNDS - CRITICAL:
+   - Page/canvas background: WHITE (#FFFFFF) only
+   - Card backgrounds: WHITE (#FFFFFF) only
+   - NEVER use: dark backgrounds, black cards, colored cards, gradients
+   - If you're tempted to use bg-gray-900, bg-slate-800, or any dark color → USE WHITE INSTEAD
+
+2. TEXT COLORS:
+   - Headings: dark charcoal (#1a1a1a) or navy (#003366)
+   - Body text: charcoal (#333333) or gray-700
+   - NEVER use light/white/gray text on dark backgrounds (because backgrounds must be white)
+
+3. NO EMOJIS - EVER:
+   - No emoji icons in titles, headers, or anywhere
+   - No decorative icons, clipart, or pictograms
+   - Use text only, or simple geometric shapes if absolutely needed
+
+4. CARDS & SECTIONS:
+   - White background with subtle border (border-gray-200) or light shadow
+   - Rounded corners (rounded-lg)
+   - Adequate padding (p-4 or p-6)
+
+5. STATUS BADGES:
+   - Small inline pills with subtle colors
+   - Examples: bg-red-100 text-red-700, bg-green-100 text-green-700
+   - NOT full-width colored sections
 
 For charts (recharts):
 - Professional color schemes (no rainbow colors)
 - Clear axis labels and legends
-- Insight-driven titles (not just data labels)
+- Chart background: always white
+- Grid: subtle gray lines
 
 For React dashboards:
-- Structured layouts, consistent spacing
+- Tailwind: bg-white for everything, text-gray-900 for text
 - Use shadcn/ui for professional components
+- Clean spacing with gap-4 or gap-6
 
 # Good artifacts are...
 - Substantial content (>15 lines)
@@ -331,20 +355,44 @@ Artifacts are for substantial, self-contained content that users might modify or
 
 # QUALITY STANDARDS - McKinsey-level output
 
-Create premium, executive-ready artifacts suitable for C-suite presentation:
-- NO emojis, NO decorative icons, NO clipart - ever
-- Clean, minimalist, data-driven design
-- Professional color palette: navy (#003366), charcoal (#333333), subtle accents
-- Clear visual hierarchy with consistent typography
+ABSOLUTE DESIGN RULES (NO EXCEPTIONS):
+
+1. BACKGROUNDS - CRITICAL:
+   - Page/canvas background: WHITE (#FFFFFF) only
+   - Card backgrounds: WHITE (#FFFFFF) only
+   - NEVER use: dark backgrounds, black cards, colored cards, gradients
+   - If you're tempted to use bg-gray-900, bg-slate-800, or any dark color → USE WHITE INSTEAD
+
+2. TEXT COLORS:
+   - Headings: dark charcoal (#1a1a1a) or navy (#003366)
+   - Body text: charcoal (#333333) or gray-700
+   - NEVER use light/white/gray text on dark backgrounds (because backgrounds must be white)
+
+3. NO EMOJIS - EVER:
+   - No emoji icons in titles, headers, or anywhere
+   - No decorative icons, clipart, or pictograms
+   - Use text only, or simple geometric shapes if absolutely needed
+
+4. CARDS & SECTIONS:
+   - White background with subtle border (border-gray-200) or light shadow
+   - Rounded corners (rounded-lg)
+   - Adequate padding (p-4 or p-6)
+
+5. STATUS BADGES:
+   - Small inline pills with subtle colors
+   - Examples: bg-red-100 text-red-700, bg-green-100 text-green-700
+   - NOT full-width colored sections
 
 For charts (recharts):
 - Professional color schemes (no rainbow colors)
 - Clear axis labels and legends
-- Insight-driven titles (not just data labels)
+- Chart background: always white
+- Grid: subtle gray lines
 
 For React dashboards:
-- Structured layouts, consistent spacing
+- Tailwind: bg-white for everything, text-gray-900 for text
 - Use shadcn/ui for professional components
+- Clean spacing with gap-4 or gap-6
 
 # Good artifacts are...
 - Substantial content (>15 lines)
