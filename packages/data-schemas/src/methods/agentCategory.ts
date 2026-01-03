@@ -244,7 +244,20 @@ export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) 
       await AgentCategory.bulkWrite(bulkOps, { ordered: false });
     }
 
-    return updates.length > 0 || created > 0;
+    // Deactivate old categories that are not in the default list (non-custom only)
+    const defaultValues = new Set(defaultCategories.map((c) => c.value));
+    const oldCategories = existingCategories.filter(
+      (cat) => !defaultValues.has(cat.value) && !cat.custom && cat.isActive,
+    );
+
+    if (oldCategories.length > 0) {
+      await AgentCategory.updateMany(
+        { value: { $in: oldCategories.map((c) => c.value) }, custom: { $ne: true } },
+        { $set: { isActive: false } },
+      );
+    }
+
+    return updates.length > 0 || created > 0 || oldCategories.length > 0;
   }
 
   return {
