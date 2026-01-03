@@ -1480,6 +1480,10 @@ export enum ErrorTypes {
    */
   AUTH_FAILED = 'auth_failed',
   /**
+   * Too many login attempts (rate limited)
+   */
+  LOGIN_RATE_LIMIT = 'login_rate_limit',
+  /**
    * Model refused to respond (content policy violation)
    */
   REFUSAL = 'refusal',

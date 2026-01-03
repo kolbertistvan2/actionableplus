@@ -1,6 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const { limiterCache } = require('@librechat/api');
-const { ViolationTypes } = require('librechat-data-provider');
+const { ViolationTypes, ErrorTypes } = require('librechat-data-provider');
 const { removePorts } = require('~/server/utils');
 const { logViolation } = require('~/cache');
 
@@ -19,6 +19,14 @@ const handler = async (req, res) => {
   };
 
   await logViolation(req, res, type, errorMessage, score);
+
+  // For OAuth routes, redirect to login page with error param instead of returning JSON
+  // OAuth routes are browser redirects, not AJAX, so JSON would show as raw text
+  if (req.originalUrl.startsWith('/oauth/')) {
+    const clientDomain = process.env.DOMAIN_CLIENT || '';
+    return res.redirect(`${clientDomain}/login?redirect=false&error=${ErrorTypes.LOGIN_RATE_LIMIT}`);
+  }
+
   return res.status(429).json({ message });
 };
 

@@ -25,14 +25,23 @@ function Login() {
 
   useEffect(() => {
     const oauthError = searchParams?.get('error');
-    if (oauthError && oauthError === ErrorTypes.AUTH_FAILED) {
-      showToast({
-        message: localize('com_auth_error_oauth_failed'),
-        status: 'error',
-      });
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('error');
-      setSearchParams(newParams, { replace: true });
+    if (oauthError) {
+      let errorMessage = '';
+      if (oauthError === ErrorTypes.AUTH_FAILED) {
+        errorMessage = localize('com_auth_error_oauth_failed');
+      } else if (oauthError === ErrorTypes.LOGIN_RATE_LIMIT) {
+        errorMessage = localize('com_auth_error_login_rl');
+      }
+
+      if (errorMessage) {
+        showToast({
+          message: errorMessage,
+          status: 'error',
+        });
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('error');
+        setSearchParams(newParams, { replace: true });
+      }
     }
   }, [searchParams, setSearchParams, showToast, localize]);
 
