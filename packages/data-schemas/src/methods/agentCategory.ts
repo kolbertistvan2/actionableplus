@@ -161,40 +161,46 @@ export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) 
         order: 0,
       },
       {
+        value: 'cro',
+        label: 'com_agents_category_cro',
+        description: 'com_agents_category_cro_description',
+        order: 1,
+      },
+      {
         value: 'marketing',
         label: 'com_agents_category_marketing',
         description: 'com_agents_category_marketing_description',
-        order: 1,
+        order: 2,
       },
       {
         value: 'data',
         label: 'com_agents_category_data',
         description: 'com_agents_category_data_description',
-        order: 2,
+        order: 3,
       },
       {
         value: 'research',
         label: 'com_agents_category_research',
         description: 'com_agents_category_research_description',
-        order: 3,
+        order: 4,
       },
       {
         value: 'logistics',
         label: 'com_agents_category_logistics',
         description: 'com_agents_category_logistics_description',
-        order: 4,
+        order: 5,
       },
       {
         value: 'finance',
         label: 'com_agents_category_finance',
         description: 'com_agents_category_finance_description',
-        order: 5,
+        order: 6,
       },
       {
         value: 'pricing',
         label: 'com_agents_category_pricing',
         description: 'com_agents_category_pricing_description',
-        order: 6,
+        order: 7,
       },
     ];
 

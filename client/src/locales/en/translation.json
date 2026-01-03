@@ -23,6 +23,8 @@
   "com_agents_by_librechat": "by LibreChat",
   "com_agents_category_consulting": "Consulting & Strategy",
   "com_agents_category_consulting_description": "E-commerce consulting and business strategy agents",
+  "com_agents_category_cro": "CRO (Conversion Rate Optimisation)",
+  "com_agents_category_cro_description": "Conversion rate optimization and UX agents",
   "com_agents_category_data": "Data Analyst",
   "com_agents_category_data_description": "Analytics, reporting, and data analysis agents",
   "com_agents_category_empty": "No agents found in the {{category}} category",

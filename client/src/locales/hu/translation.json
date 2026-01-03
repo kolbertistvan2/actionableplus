@@ -18,6 +18,8 @@
   "com_agents_by_librechat": "a LibreChat által",
   "com_agents_category_consulting": "Tanácsadás & Stratégia",
   "com_agents_category_consulting_description": "E-kereskedelmi tanácsadó és üzleti stratégiai ügynökök",
+  "com_agents_category_cro": "CRO (Conversion Rate Optimisation)",
+  "com_agents_category_cro_description": "Konverziónövelő és UX ügynökök",
   "com_agents_category_data": "Adatelemzés",
   "com_agents_category_data_description": "Analitika, riporting és adatelemző ügynökök",
   "com_agents_category_empty": "Nem található ügynök a(z) {{category}} kategóriában",
