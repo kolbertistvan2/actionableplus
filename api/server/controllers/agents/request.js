@@ -232,6 +232,32 @@ const ResumableAgentController = async (req, res, next, initializeClient, addTit
         conversation.title =
           conversation && !conversation.title ? null : conversation?.title || 'New Chat';
 
+        // Process generated files from MCP tools (images, etc.) and add to response
+        if (client.artifactPromises && client.artifactPromises.length > 0) {
+          try {
+            const artifacts = await Promise.all(client.artifactPromises);
+            const generatedFiles = artifacts
+              .filter((artifact) => artifact && artifact.file_id)
+              .map((artifact) => ({
+                file_id: artifact.file_id,
+                filepath: artifact.filepath,
+                filename: artifact.filename,
+                type: artifact.type,
+                height: artifact.height,
+                width: artifact.width,
+              }));
+
+            if (generatedFiles.length > 0) {
+              response.files = [...(response.files || []), ...generatedFiles];
+              logger.debug(
+                `[ResumableAgentController] Added ${generatedFiles.length} generated files to response message`,
+              );
+            }
+          } catch (error) {
+            logger.error('[ResumableAgentController] Error processing artifact promises:', error);
+          }
+        }
+
         if (req.body.files && client.options?.attachments) {
           userMessage.files = [];
           const messageFiles = new Set(req.body.files.map((file) => file.file_id));
@@ -575,6 +601,32 @@ const _LegacyAgentController = async (req, res, next, initializeClient, addTitle
     const conversation = { ...convoData };
     conversation.title =
       conversation && !conversation.title ? null : conversation?.title || 'New Chat';
+
+    // Process generated files from MCP tools (images, etc.) and add to response
+    if (client.artifactPromises && client.artifactPromises.length > 0) {
+      try {
+        const artifacts = await Promise.all(client.artifactPromises);
+        const generatedFiles = artifacts
+          .filter((artifact) => artifact && artifact.file_id)
+          .map((artifact) => ({
+            file_id: artifact.file_id,
+            filepath: artifact.filepath,
+            filename: artifact.filename,
+            type: artifact.type,
+            height: artifact.height,
+            width: artifact.width,
+          }));
+
+        if (generatedFiles.length > 0) {
+          response.files = [...(response.files || []), ...generatedFiles];
+          logger.debug(
+            `[AgentController] Added ${generatedFiles.length} generated files to response message`,
+          );
+        }
+      } catch (error) {
+        logger.error('[AgentController] Error processing artifact promises:', error);
+      }
+    }
 
     // Process files if needed (sanitize to remove large text fields before transmission)
     if (req.body.files && client.options?.attachments) {
