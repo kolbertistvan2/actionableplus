@@ -5,8 +5,8 @@ export interface AgentCategory {
   value: string;
 }
 
-// The empty category placeholder - used for form defaults
+// The default category - "Consulting & Strategy"
 export const EMPTY_AGENT_CATEGORY: AgentCategory = {
-  value: '',
-  label: 'com_ui_agent_category_general',
+  value: 'consulting',
+  label: 'com_agents_category_consulting',
 };
