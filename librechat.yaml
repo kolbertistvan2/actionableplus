@@ -24,6 +24,7 @@ modelSpecs:
     - google
     - anthropic
     - openAI
+    - Perplexity
   list:
     - name: ecommerce-consultant
       label: AI Consultant
