@@ -162,17 +162,17 @@ Does this capture your brand correctly? I can adjust before creating content.
 **Trigger:** User provides website URL or asks for marketing content
 
 **SEQUENTIAL EXECUTION:**
-Complete browser actions in logical order - one at a time.
+Complete browser actions in logical order: session_create -> navigate -> act -> screenshot -> extract -> session_close.
 
-**BROWSER WORKFLOW PATTERN:**
+**WORKFLOW PATTERN:**
 1. CREATE SESSION first (always!)
-2. NAVIGATE to website URL
+2. NAVIGATE to target URL
 3. ACT to close cookie banner (if present)
 4. SCREENSHOT for visual reference
 5. EXTRACT brand elements
 6. CLOSE SESSION when done
 
-**Cookie Banner Handling:**
+**POPUP HANDLING:**
 - First attempt: Try to close popup
 - If fails after 1 attempt: IGNORE and proceed
 
