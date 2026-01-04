@@ -53,7 +53,7 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
       size: '150px',
     },
     accessorKey: 'filename',
-    header: ({ column }) => {
+    header: () => {
       const localize = useLocalize();
       return <>{localize('com_ui_name')}</>;
     },
@@ -68,7 +68,7 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
       return 'Vector Stores';
     },
     cell: ({ row }) => {
-      const { vectorsAttached: attachedVectorStores } = row.original;
+      const attachedVectorStores = (row.original as Record<string, unknown>)['vectorsAttached'] as Array<{ name: string }> ?? [];
       return (
         <>
           {attachedVectorStores.map((vectorStore, index) => {
@@ -100,17 +100,16 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
   {
     accessorKey: 'updatedAt',
     header: () => {
-      const localize = useLocalize();
       return 'Modified';
     },
-    cell: ({ row }) => formatDate(row.original.updatedAt),
+    cell: ({ row }) => formatDate(row.original.updatedAt?.toString() ?? ''),
   },
   {
     accessorKey: 'actions',
     header: () => {
       return 'Actions';
     },
-    cell: ({ row }) => {
+    cell: () => {
       return (
         <>
           <Button className="w-min content-center bg-transparent text-gray-500 hover:bg-slate-200">
