@@ -677,6 +677,10 @@ Agent system prompt-ok az `/agents` mappában találhatók.
 | Agent | File | Description |
 |-------|------|-------------|
 | CRO Audit | `agents/cro-audit-agent.md` | E-commerce CRO audit with checklist |
+| Marketing Content Creator | `agents/marketing-content-creator.md` | Pomelli-style brand analysis + content generation |
+| Creative Designer | `agents/creative-designer.md` | Product photography and ad creatives |
+| Photo Editor | `agents/photo-editor.md` | Image editing and enhancement |
+| Web Researcher | `agents/web-researcher.md` | Web research and data gathering |
 
 ## Google OAuth Login
 
