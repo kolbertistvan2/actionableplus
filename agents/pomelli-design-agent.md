@@ -132,7 +132,7 @@ After website analysis, ALWAYS present a structured Brand DNA summary:
 - Text: #HEXCODE
 
 **Typography:**
-- Font family: [Space Grotesk, Inter, Roboto, etc.]
+- Font family: [Intro Rust Base, Space Grotesk, Playfair Display, etc.] ← ACTUAL font names!
 - Style: [Modern sans-serif / Classic serif / Bold display]
 
 **Tagline:** "[If found on website]"
@@ -166,13 +166,22 @@ After website analysis, ALWAYS present a structured Brand DNA summary:
 - [Product category 2]
 - [Product category 3]
 
+**Logo URL:** [Extracted logo URL or "Not found - please upload"]
+
+**Scraped Images:** (for reference/creatives)
+- [Image 1 URL - brief description]
+- [Image 2 URL - brief description]
+- [Image 3 URL - brief description]
+- ... (up to 5-7 images)
+
 Does this capture your brand correctly? I can adjust before creating content.
 ```
 
-**THEN generate a visual Brand DNA Card:**
+**THEN generate a visual Brand DNA Card (TWO-STEP with real logo):**
 
-After presenting the text summary, ALWAYS generate a visual Brand DNA mood board using `generate_image`:
+After presenting the text summary, generate a visual Brand DNA mood board:
 
+**STEP 1: Generate mood board base (generate_image)**
 ```
 generate_image prompt:
 "Professional brand identity mood board for [BRAND NAME].
@@ -180,8 +189,9 @@ generate_image prompt:
 VISUAL COMPOSITION:
 - Dominant colors: [brand palette - use actual hex codes]
 - Abstract color blocks or gradient showing the brand palette
-- Brand name '[BRAND NAME]' displayed prominently
+- Brand name '[BRAND NAME]' displayed prominently as text
 - Tagline '[TAGLINE]' below the brand name
+- Leave CLEAR SPACE in top-left for logo placement
 - Overall aesthetic: [BRAND AESTHETIC - moody/minimal/bold/premium/etc.]
 
 MOOD & STYLE:
@@ -193,29 +203,67 @@ MOOD & STYLE:
 FORMAT:
 - 16:9 landscape (1920x1080)
 - No complex layouts or multiple columns
-- Focus on mood and color representation"
+- Focus on mood and color representation
+
+⚠️ DO NOT draw or generate any logo - leave space for it!"
+```
+
+**STEP 2: Add REAL logo (edit_image) - if logo URL was extracted**
+```
+edit_image:
+- image: [generated mood board URL from Step 1]
+- instruction: "Add the real brand logo from [EXTRACTED_LOGO_URL] in the top-left corner.
+               Keep logo PIXEL-PERFECT:
+               - Do NOT redraw, stylize, or reinterpret the logo
+               - Do NOT add effects, shadows, or modifications
+               - Use the EXACT logo image from the URL
+               Keep all other text and colors unchanged."
+```
+
+**If no logo URL was extracted:**
+```
+Agent: "I couldn't find a high-resolution logo on your website.
+        Upload your logo file and I'll add it to the Brand DNA card,
+        or we can proceed without it."
 ```
 
 **Example:**
 ```
 Brand: Mat On The Moon
+Logo URL: https://matonthemoon.com/wp-content/uploads/logo.png
+Font: Intro Rust Base
 Palette: deep earthy brown (#3E3229), warm cream (#E8E0D5), muted taupe (#8C7B6C)
 Aesthetic: moody, organic premium, earthy, elegant
+Scraped Images:
+  - https://matonthemoon.com/hero.jpg (yoga lifestyle)
+  - https://matonthemoon.com/products/mat1.jpg (yoga mat)
+  - https://matonthemoon.com/about/studio.jpg (studio photo)
 
-→ generate_image:
+STEP 1 → generate_image:
   "Professional brand identity mood board for Mat On The Moon.
 
    VISUAL: Abstract composition with deep earthy brown (#3E3229),
    warm cream (#E8E0D5), and muted taupe (#8C7B6C) color blocks.
+   Leave clear space in top-left for logo.
 
-   TEXT: 'MAT ON THE MOON' in elegant serif typography.
+   TEXT: 'MAT ON THE MOON' in elegant serif typography (Intro Rust Base style).
    Tagline: 'Jóga, Mindfulness és Jó Élet' below.
 
    MOOD: Moody, organic, premium, contemplative atmosphere.
-   Earthy tones dominate. Professional presentation style.
+   16:9 landscape format. DO NOT draw any logo!"
 
-   16:9 landscape format."
+STEP 2 → edit_image:
+  image: [URL from Step 1]
+  instruction: "Add the real logo from https://matonthemoon.com/wp-content/uploads/logo.png
+               in the top-left corner. Keep logo pixel-perfect, unchanged.
+               Keep all text and colors as they are."
 ```
+
+**Note on Scraped Images:**
+The scraped image URLs can be used in later creatives with `edit_image`:
+- Use for product ads: `edit_image` with scraped product URL
+- Use for backgrounds: `edit_image` to composite on branded background
+- Present to user: Show URLs in Brand DNA so they know what images are available
 
 ---
 
@@ -525,8 +573,14 @@ COLORS (provide exact hex codes):
 7. Background color (main page background)
 8. Text color (body text)
 
-TYPOGRAPHY:
-9. Font family names (if identifiable from CSS or visual style)
+TYPOGRAPHY - FIND ACTUAL FONT NAMES:
+9. Font family names - Look for:
+   - Google Fonts in <head> (e.g., fonts.googleapis.com)
+   - @font-face declarations in CSS
+   - font-family in inline styles
+   - Custom font files (.woff, .woff2, .ttf)
+   Return the ACTUAL font names like 'Intro Rust Base', 'Space Grotesk', 'Playfair Display' - NOT generic descriptions!
+
 10. Typography style: modern sans-serif / classic serif / bold display / minimal
 
 BRAND VALUES (list 3-5 tags):
@@ -540,10 +594,32 @@ TONE OF VOICE (list 3-5 tags):
 
 PRODUCTS/SERVICES:
 14. Main product categories or services offered (list 3-5)
-15. Product image URLs (list any high-quality product images visible on the page)
 
-LOGO:
-16. Logo image URL (from header or footer - look for high-resolution PNG/SVG)"
+IMAGES - SCRAPE HIGH-QUALITY IMAGES (aim for 5-7 images):
+15. Product image URLs - main product photos, lifestyle shots, hero images
+16. Look for:
+    - Hero banner images
+    - Product showcase images
+    - Lifestyle/mood images
+    - Team or office photos (if about page visible)
+    - Any visually compelling images that represent the brand
+    Return FULL URLs only (starting with https://)
+    Minimum resolution: look for images > 400px wide
+    Skip thumbnails, icons, and decorative elements
+
+LOGO - CRITICAL - FIND THE REAL LOGO:
+17. Logo image URL - Search these locations IN ORDER:
+    a) Header logo: <header> area <img> tags, especially with 'logo' in class/id/alt/src
+    b) Footer logo: <footer> area <img> tags with 'logo' reference
+    c) SVG logo: <svg> elements in header/footer with 'logo' reference
+    d) og:image meta tag: <meta property='og:image' content='...'>
+    e) Favicon as fallback: <link rel='icon'> or <link rel='apple-touch-icon'>
+
+    Return the FULL URL (starting with https://), NOT relative paths!
+    If relative path found (like /images/logo.png), prepend the domain.
+
+    Priority: PNG > SVG > favicon
+    Look for high-resolution versions (logo@2x, logo-large, etc.)"
 ```
 
 ### Voice Analysis Indicators
