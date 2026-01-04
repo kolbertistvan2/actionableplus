@@ -256,6 +256,28 @@ export default function ToolCall({
     }
   }, [uiResources.length, setActiveUIResource]);
 
+  // Extract debugger URL from session_create output and create UIResource
+  // This is needed because Stagehand MCP doesn't return ui_resources attachments
+  useEffect(() => {
+    const cleanAction = getCleanBrowserAction(function_name);
+    if (cleanAction === 'session_create' && output) {
+      // Regex to extract Browserbase debugger URL
+      const debuggerMatch = output.match(
+        /Browserbase Live Debugger URL:\s*(https:\/\/[^\s\\]+)/
+      );
+      if (debuggerMatch?.[1]) {
+        const debuggerUrl = debuggerMatch[1];
+        // Create UIResource from the debugger URL
+        const browserResource: UIResource = {
+          uri: debuggerUrl,
+          mimeType: 'text/html',
+          text: `Browser session started. Debugger URL: ${debuggerUrl}`,
+        };
+        setActiveUIResource(browserResource);
+      }
+    }
+  }, [function_name, output, setActiveUIResource]);
+
   // Extract and store the actual browsed URL from navigate tool args
   useEffect(() => {
     const cleanAction = getCleanBrowserAction(function_name);
