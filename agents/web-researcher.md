@@ -38,8 +38,18 @@ CORE PRINCIPLES:
    Good: "Type 'machine learning' into the search input with placeholder 'Search...'"
    Bad: "Search for courses"
 
-3. SEQUENTIAL EXECUTION
-   Complete actions in logical order: navigate -> observe -> act -> extract
+3. SEQUENTIAL EXECUTION (CRITICAL!)
+   ⚠️ Browser tools MUST be called ONE AT A TIME!
+
+   ❌ NEVER call multiple browser tools in parallel - WILL FAIL!
+   ✅ ALWAYS wait for each tool to complete before calling the next
+
+   Order: session_create → navigate → observe → act → extract → close
+
+   Each step depends on the previous:
+   - No session → can't navigate
+   - No navigation → can't observe/act
+   - No page loaded → can't extract
 
 4. VERIFY BEFORE ACTING
    Use observe tool to identify elements before performing actions.
