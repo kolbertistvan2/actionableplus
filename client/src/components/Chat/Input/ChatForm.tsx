@@ -68,13 +68,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     store.showMentionPopoverFamily(index),
   );
 
-  // Browser preview state - use conversation.conversationId for proper isolation
-  // When convId (from URL) is empty (new chat), fall back to conversation context
-  const browserConversationId = convId || conversation?.conversationId || '';
-  const activeUIResource = useRecoilValue(activeUIResourceFamily(browserConversationId));
-  const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(browserConversationId));
-  const [isThumbnailDismissed, setIsThumbnailDismissed] = useRecoilState(browserThumbnailDismissedFamily(browserConversationId));
-
   const { requiresKey } = useRequiresKey();
   const methods = useChatFormContext();
   const {
@@ -117,6 +110,14 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     () => requiresKey || invalidAssistant,
     [requiresKey, invalidAssistant],
   );
+
+  // Browser preview state - use conversation.conversationId for proper isolation
+  // When convId (from URL) is empty (new chat), fall back to conversation context
+  // IMPORTANT: This must be defined AFTER conversation is available from useChatContext()
+  const browserConversationId = convId || conversation?.conversationId || '';
+  const activeUIResource = useRecoilValue(activeUIResourceFamily(browserConversationId));
+  const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(browserConversationId));
+  const [isThumbnailDismissed, setIsThumbnailDismissed] = useRecoilState(browserThumbnailDismissedFamily(browserConversationId));
 
   const handleContainerClick = useCallback(() => {
     /** Check if the device is a touchscreen */
