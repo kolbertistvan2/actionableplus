@@ -234,6 +234,12 @@ mcpServers:
     type: streamable-http
     url: https://gemini-image-mcp-production.up.railway.app/mcp
     timeout: 120000
+  claude-skills:
+    type: streamable-http
+    url: https://skills-mcp-server-production.up.railway.app/mcp
+    timeout: 300000
+    title: "Claude Skills"
+    description: "Excel, PowerPoint, Word, PDF, Frontend Design, and more"
 
 endpoints:
   agents:
@@ -315,6 +321,147 @@ Gemini image generation is NOT available in all countries. The MCP server must r
 
 ```
 GOOGLE_KEY=<gemini-api-key>
+```
+
+## Claude Skills MCP (Document Generation)
+
+Custom MCP server that exposes Anthropic Claude Skills as tools for document generation (Excel, PowerPoint, Word, PDF, etc.).
+
+### Repository
+
+**Local:** `/Users/kolbert/Dev/skills-mcp-server`
+**Railway:** https://skills-mcp-server-production.up.railway.app
+
+### Architecture
+
+```
+Agent (LibreChat)
+    ↓ calls create_excel / create_presentation / etc.
+skills-mcp-server (Railway)
+    ↓ uses Anthropic SDK with container.skills
+Anthropic Claude Skills API (claude-sonnet-4-5-20250929)
+    ↓ generates file (xlsx, pptx, docx, pdf)
+Files API (/v1/files/{fileId}/content)
+    ↓ downloads file
+In-memory file store (24h TTL)
+    ↓ download URL
+Agent returns link to user
+```
+
+### Available Skills (16 total - ALL WORKING)
+
+**Pre-built Anthropic Skills (type: "anthropic"):**
+
+| Tool | Skill ID | Description |
+|------|----------|-------------|
+| `create_excel` | xlsx | Excel spreadsheets with formulas, charts, pivot tables |
+| `create_presentation` | pptx | PowerPoint presentations with layouts, charts |
+| `create_document` | docx | Word documents with headers, tables, styles |
+| `create_pdf` | pdf | PDF documents and reports |
+
+**Custom Skills (type: "custom" - uploaded via Skills API):**
+
+| Tool | Skill ID | Description |
+|------|----------|-------------|
+| `create_algorithmic_art` | algorithmic-art | Generative art with p5.js, seeded randomness |
+| `create_canvas_design` | canvas-design | Visual art in PNG/PDF using HTML Canvas |
+| `create_frontend_design` | frontend-design | Production-grade UI design (HTML/CSS/JS) |
+| `create_theme` | theme-factory | Design themes, color palettes, typography |
+| `build_mcp_server` | mcp-builder | MCP server development |
+| `create_skill` | skill-creator | Create new Claude Skills (SKILL.md) |
+| `build_web_artifact` | web-artifacts-builder | Interactive web components |
+| `test_webapp` | webapp-testing | Web app testing strategies |
+| `create_brand_guidelines` | brand-guidelines | Anthropic brand colors/typography |
+| `coauthor_document` | doc-coauthoring | Collaborative document editing |
+| `create_internal_comms` | internal-comms | Company announcements, newsletters |
+| `create_slack_gif` | slack-gif-creator | Animated GIFs for team communication |
+
+### Two Types of Skills
+
+**Pre-built (4 skills):** Use `type: "anthropic"` with skill_id like "xlsx", "pptx"
+
+**Custom (12 skills):** Use `type: "custom"` with uploaded skill IDs. These were uploaded via the Skills API (`POST /v1/skills`) and have IDs like `skill_01J936vqmotEY1kyMPY7Udoo`.
+
+### Custom Skill IDs Mapping
+
+```typescript
+// In src/index.ts - these are uploaded skill IDs
+const CUSTOM_SKILL_IDS: Record<string, string> = {
+  "algorithmic-art": "skill_014qWgeU9NNBxSMZd7eHNCet",
+  "brand-guidelines": "skill_017AGJ1TcfDhMDi7SDHv9pRy",
+  "canvas-design": "skill_01EtHSQDzwbeeHYAinhbVrfH",
+  "doc-coauthoring": "skill_017Gppj6evBdWPgvBp2TzafE",
+  "frontend-design": "skill_01J936vqmotEY1kyMPY7Udoo",
+  "internal-comms": "skill_01FAK6w1ctsv7tFjNK4JxGHd",
+  "mcp-builder": "skill_01WsnGNu9jKGGf4ho83w7xbi",
+  "skill-creator": "skill_015iRzTEdCQ4B5iJjX5dH5ZH",
+  "slack-gif-creator": "skill_01LpiivoMVr34qtNs2HVuxQc",
+  "theme-factory": "skill_012v24TfcvLLMqEr31BhL6jg",
+  "web-artifacts-builder": "skill_01CpghWzdRX6tzWYMu4RFhZD",
+  "webapp-testing": "skill_01KipSdx7kZ2diHMn8gbLCor",
+};
+```
+
+### Upload Script
+
+To re-upload custom skills (if needed), use `/Users/kolbert/Dev/skills-mcp-server/upload-custom-skills.ts`:
+
+```bash
+cd /Users/kolbert/Dev/skills-mcp-server
+ANTHROPIC_API_KEY=... npx tsx upload-custom-skills.ts
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/index.ts` | Main server - skill definitions (line 66-183), API calls |
+| `package.json` | Dependencies (@anthropic-ai/sdk, @modelcontextprotocol/sdk) |
+| `Dockerfile` | Alpine Node.js image for Railway |
+
+### API Configuration
+
+```typescript
+// Beta features required
+betas: ["code-execution-2025-08-25", "skills-2025-10-02", "files-api-2025-04-14"]
+
+// For pre-built skills (xlsx, pptx, docx, pdf)
+container: {
+  skills: [{
+    type: "anthropic",
+    skill_id: "xlsx",  // e.g., "xlsx", "pptx"
+    version: "latest",
+  }]
+}
+
+// For custom skills (frontend-design, etc.)
+container: {
+  skills: [{
+    type: "custom",
+    skill_id: "skill_01J936vqmotEY1kyMPY7Udoo",  // Uploaded skill ID
+    version: "latest",
+  }]
+}
+```
+
+### librechat.yaml Config
+
+```yaml
+claude-skills:
+  type: streamable-http
+  url: https://skills-mcp-server-production.up.railway.app/mcp
+  timeout: 300000
+  initTimeout: 30000
+  requiresOAuth: false
+  title: "Claude Skills"
+  description: "Excel, PowerPoint, Word, PDF, Frontend Design, and more"
+```
+
+### Environment Variables (Railway - skills-mcp-server)
+
+```
+ANTHROPIC_API_KEY=<anthropic-api-key>
+BASE_URL=https://skills-mcp-server-production.up.railway.app
 ```
 
 ## File Storage Configuration
