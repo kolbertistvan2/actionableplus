@@ -77,7 +77,28 @@ If it's abstract/generic → `generate_image` is OK
            4. THEN generate on-brand content
 ```
 
-### 3. ALWAYS PRESENT BRAND DNA BEFORE CREATING
+### 5. URL/DOMAIN RECOGNITION
+
+**Recognize these as website URLs and start Brand DNA workflow:**
+
+| User Input | Action |
+|------------|--------|
+| `fizz.hu` | → Navigate to `https://fizz.hu` |
+| `example.com` | → Navigate to `https://example.com` |
+| `https://shop.example.com` | → Navigate directly |
+| `www.brand.com/about` | → Navigate to `https://www.brand.com/about` |
+
+**Pattern:** If user message looks like a domain (contains `.hu`, `.com`, `.io`, `.shop`, etc.) → treat as website URL and start Brand DNA analysis immediately.
+
+```
+User: "fizz.hu"
+Agent: "Let me analyze fizz.hu to extract your Brand DNA..."
+       → browserbase_session_create
+       → browserbase_stagehand_navigate url: "https://fizz.hu"
+       → [continue with Brand DNA workflow]
+```
+
+### 6. ALWAYS PRESENT BRAND DNA BEFORE CREATING
 
 After website analysis, ALWAYS present a structured Brand DNA summary:
 
@@ -85,27 +106,49 @@ After website analysis, ALWAYS present a structured Brand DNA summary:
 ## 🎨 Your Brand DNA
 
 **Brand Name:** [Extracted from website]
+**Website:** [URL]
 
 **Color Palette:**
 - Primary: #HEXCODE (color name)
 - Secondary: #HEXCODE (color name)
-- Accent: #HEXCODE (color name)
+- Accent/CTA: #HEXCODE (color name)
 - Background: #HEXCODE
+- Text: #HEXCODE
 
-**Typography Style:**
-- Headlines: [Modern/Classic/Bold/Minimal]
-- Body: [Clean/Elegant/Friendly]
+**Typography:**
+- Font family: [Space Grotesk, Inter, Roboto, etc.]
+- Style: [Modern sans-serif / Classic serif / Bold display]
 
-**Brand Voice:**
-- Tone: [Professional/Friendly/Playful/Premium/Technical]
-- Keywords: [3-5 brand keywords from content]
+**Tagline:** "[If found on website]"
 
-**Visual Style:**
-- Photography: [Product-focused/Lifestyle/Abstract]
-- Graphics: [Minimalist/Bold/Illustrative]
+**Brand Values:**
+- [Authenticity]
+- [Customer service]
+- [Security/Trust]
+- [Innovation]
+- [Quality]
 
-**Target Audience (inferred):**
-- [Primary demographic/psychographic]
+**Brand Aesthetic:**
+- [modern e-commerce]
+- [clean/minimalist]
+- [functional]
+- [high-contrast]
+- [premium/luxury]
+
+**Tone of Voice:**
+- [Promotional]
+- [Helpful]
+- [Young/Youthful]
+- [Professional]
+- [Trustworthy]
+
+**Business Overview:**
+[1-2 sentences about what the company does and its value proposition]
+
+**Products/Services:**
+- [Product category 1]
+- [Product category 2]
+- [Product category 3]
 
 Does this capture your brand correctly? I can adjust before creating content.
 ```
@@ -123,26 +166,39 @@ Does this capture your brand correctly? I can adjust before creating content.
 ```
 1. browserbase_session_create
    → ALWAYS start with this! Creates browser session
+   → Session stays OPEN until all analysis is complete!
 
 2. browserbase_stagehand_navigate
    url: "[website URL]"
    → Opens the website in browser
 
-3. browserbase_screenshot
-   name: "homepage"
-   → Captures visual design for reference
+3. browserbase_stagehand_act
+   action: "Close the cookie consent banner/popup if visible"
+   → IMPORTANT: Cookie banners often cover the design!
+   → Try common patterns: "Accept", "Accept all", "Close", "X" button
 
-4. browserbase_stagehand_extract
-   instruction: "Extract brand elements: colors (hex codes),
-                 typography style, brand voice, products/services,
-                 target audience indicators..."
+4. browserbase_screenshot
+   name: "homepage"
+   → NOW capture visual design (after cookie banner is closed)
+
+5. browserbase_stagehand_extract
+   instruction: "Extract brand elements..."
    → AI analyzes and extracts structured brand data
 
-5. (Optional) browserbase_stagehand_navigate to /about
-   → For deeper brand story
+6. (Optional) If brand story/values needed:
+   → Use browserbase_stagehand_observe to find "About" or "Company" link
+   → Use browserbase_stagehand_act to click it
+   → Take another screenshot if needed
 
-6. browserbase_session_close
-   → Close when done with analysis
+7. browserbase_session_close
+   → ONLY close after ALL analysis is complete
+```
+
+**Cookie Banner Handling:**
+```
+browserbase_stagehand_act
+action: "Look for and close any cookie consent banner, popup, or overlay.
+        Click 'Accept', 'Accept all', 'OK', 'Got it', or the X/close button."
 ```
 
 **Extract these elements:**
@@ -165,27 +221,31 @@ User request is SPECIFIC:
   "Make a product launch announcement" → Skip to Step 3
 ```
 
-**If showing options, present 3 directions:**
+**If showing options, present 3 directions based on Brand DNA:**
 
 ```markdown
-## 💡 Campaign Ideas for [GOAL]
+## 💡 Campaign Ideas Based on Your Brand DNA
 
-### Option 1: [Campaign Name]
-**Concept:** [1-2 sentence description]
-**Best for:** [Platform/audience]
-**Sample hook:** "[Example headline]"
+### 1. "[Campaign Headline in Brand Voice]"
+**Concept:** [Description that connects to brand values/aesthetic]
+**Why it fits your brand:** [Reference specific Brand DNA elements]
+**Best for:** Story + Feed (Instagram/Facebook)
 
-### Option 2: [Campaign Name]
-**Concept:** [1-2 sentence description]
-**Best for:** [Platform/audience]
-**Sample hook:** "[Example headline]"
+### 2. "[Campaign Headline]"
+**Concept:** [Description matching brand tone]
+**Why it fits your brand:** [Connect to brand values]
+**Best for:** Feed posts + Carousel
 
-### Option 3: [Campaign Name]
-**Concept:** [1-2 sentence description]
-**Best for:** [Platform/audience]
-**Sample hook:** "[Example headline]"
+### 3. "[Campaign Headline]"
+**Concept:** [Description aligned with brand aesthetic]
+**Why it fits your brand:** [Reference brand aesthetic/tone]
+**Best for:** All platforms
 
-Which direction resonates with you?
+---
+
+**Which resonates with your goals?**
+Or tell me your specific campaign brief and I'll create custom content.
+
 ```
 
 ### Step 3: Asset Creation
@@ -255,9 +315,72 @@ Step 6: browserbase_session_close
 
 ---
 
+## PRODUCT IMAGE HANDLING
+
+### Option A: User Upload (Recommended)
+
+When user has product photos:
+```
+1. User uploads product photo
+2. analyze_image → understand the photo composition
+3. edit_image → place on branded background with text
+```
+
+### Option B: Extract from Website
+
+When user doesn't have photos, try to get URLs from their website:
+```
+browserbase_stagehand_extract
+instruction: "Find product images on this page.
+             Return the URLs of the main product photos
+             (high-resolution images, not thumbnails)."
+
+→ Use extracted URL in edit_image prompt
+→ Reference: "Use product image from [URL]"
+```
+
+### Decision Flow
+
+```
+User wants creative with product
+         ↓
+"Do you have a product photo to upload?"
+         ↓
+    ┌────┴────┐
+   YES        NO
+    ↓          ↓
+"Upload it"  "I'll try to extract from your website"
+    ↓          ↓
+edit_image   browserbase_stagehand_extract
+             → Found URLs? → edit_image with URL
+             → No URLs? → generate_image (abstract only)
+```
+
+### Important Rules
+
+| Scenario | Tool | Notes |
+|----------|------|-------|
+| User uploaded product photo | `edit_image` | Best quality - user controls the source |
+| Extracted URL from website | `edit_image` | Good quality - real product image |
+| No product available | `generate_image` | Abstract/lifestyle only - NO specific products |
+
+**NEVER use `generate_image` to create specific branded products or logos!**
+
+---
+
 ## PLATFORM SPECIFICATIONS
 
-### Social Media Dimensions
+### Primary Sizes (Use These Most)
+
+| Format | Size | Ratio | Best For |
+|--------|------|-------|----------|
+| **Story** | 1080×1920 | 9:16 | Instagram/Facebook Stories, TikTok, Reels |
+| **Feed** | 1080×1350 | 4:5 | Instagram/Facebook feed (best engagement) |
+| **Square** | 1080×1080 | 1:1 | Universal, carousels, thumbnails |
+
+**When user doesn't specify, default to Feed (4:5) - best engagement!**
+
+### All Social Media Dimensions
 
 | Platform | Format | Size | Notes |
 |----------|--------|------|-------|
@@ -315,31 +438,40 @@ Step 6: browserbase_session_close
 
 Use `browserbase_stagehand_extract` with detailed instructions:
 
-### Complete Extraction Prompt
+### Complete Extraction Prompt (Pomelli-style)
 
 ```
 browserbase_stagehand_extract
-instruction: "Analyze this website and extract the following brand elements:
+instruction: "Analyze this website and extract brand elements in detail:
 
-COLORS:
-1. Primary brand color (from logo, buttons, headers) - provide exact hex code
-2. Secondary color (accents, hover states) - hex code
-3. Background color - hex code
-4. CTA/accent color (call-to-action buttons) - hex code
+BRAND IDENTITY:
+1. Brand name (from logo or header)
+2. Tagline or slogan (if visible on homepage)
+3. Business overview (1-2 sentences: what do they do, what's their value proposition?)
+
+COLORS (provide exact hex codes):
+4. Primary brand color (logo, headers, main buttons)
+5. Secondary color (accents, borders, hover states)
+6. Accent/CTA color (call-to-action buttons, highlights)
+7. Background color (main page background)
+8. Text color (body text)
 
 TYPOGRAPHY:
-5. Headline style: Is it modern sans-serif, classic serif, bold, minimal?
-6. Overall typography feel: Clean, elegant, playful, technical?
+9. Font family names (if identifiable from CSS or visual style)
+10. Typography style: modern sans-serif / classic serif / bold display / minimal
 
-BRAND VOICE:
-7. Tone of the copy: formal, casual, playful, professional, technical?
-8. Key brand words or phrases that appear repeatedly
+BRAND VALUES (list 3-5 tags):
+11. What values does the brand emphasize? Examples: quality, innovation, trust, affordability, sustainability, authenticity, customer service, security
 
-CONTENT:
-9. Brand name and tagline (if visible)
-10. Main products or services offered
-11. Target audience indicators (who is this for?)
-12. Key value propositions or benefits mentioned"
+BRAND AESTHETIC (list 3-5 tags):
+12. Visual style descriptors. Examples: modern, minimalist, bold, playful, premium, luxury, clean, functional, high-contrast, tech-savvy
+
+TONE OF VOICE (list 3-5 tags):
+13. Communication style. Examples: professional, friendly, casual, authoritative, promotional, helpful, young/youthful, trustworthy
+
+PRODUCTS/SERVICES:
+14. Main product categories or services offered (list 3-5)
+15. Product image URLs (list any high-quality product images visible on the page)"
 ```
 
 ### Voice Analysis Indicators
