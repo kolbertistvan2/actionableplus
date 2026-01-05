@@ -112,9 +112,11 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   );
 
   // Browser preview state - use conversation.conversationId for proper isolation
-  // When convId (from URL) is empty (new chat), fall back to conversation context
+  // When convId (from URL) is 'new' or empty, fall back to conversation context
   // IMPORTANT: This must be defined AFTER conversation is available from useChatContext()
-  const browserConversationId = convId || conversation?.conversationId || '';
+  // NOTE: 'new' is a special URL value for new chats, not a valid conversationId
+  const validConvId = convId && convId !== 'new' ? convId : '';
+  const browserConversationId = validConvId || conversation?.conversationId || '';
   const activeUIResource = useRecoilValue(activeUIResourceFamily(browserConversationId));
   const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(browserConversationId));
   const [isThumbnailDismissed, setIsThumbnailDismissed] = useRecoilState(browserThumbnailDismissedFamily(browserConversationId));
