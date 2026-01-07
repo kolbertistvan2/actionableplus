@@ -1256,11 +1256,12 @@ class AgentClient extends BaseClient {
     }
 
     try {
+      // Use only user text for title generation to avoid artifact content in titles
       const titleResult = await this.run.generateTitle({
         provider,
         clientOptions,
         inputText: text,
-        contentParts: this.contentParts,
+        contentParts: [],
         titleMethod: endpointConfig?.titleMethod,
         titlePrompt: endpointConfig?.titlePrompt,
         titlePromptTemplate: endpointConfig?.titlePromptTemplate,
