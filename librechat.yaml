@@ -4,6 +4,8 @@ cache: true
 # Interface settings
 interface:
   bookmarks: false
+  marketplace:
+    use: true
   privacyPolicy:
     externalUrl: "/privacy-policy.html"
     openNewTab: true
