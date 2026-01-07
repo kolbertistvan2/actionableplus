@@ -255,6 +255,60 @@ endpoints:
 
 **Config file:** `/Users/kolbert/Dev/stagehand-mcp-server/src/config.ts`
 
+## Document Reading Support (Jan 2026)
+
+Agents can read uploaded document files (Word, Excel, PDF, txt, md, csv, json) and access their contents directly.
+
+### How It Works
+
+1. User uploads a document file in chat
+2. `addFileContextToMessage()` in `api/server/controllers/agents/client.js` extracts the text content
+3. Content is added to `message.fileContext` which becomes part of the system prompt
+4. Agent can read and analyze the document content
+
+### Supported File Types
+
+| Type | Library | Extensions |
+|------|---------|------------|
+| Excel | xlsx | .xlsx, .xls |
+| Word | mammoth | .docx |
+| PDF | pdf-parse | .pdf |
+| Text | fs (native) | .txt, .md, .csv, .json |
+
+### Key Implementation
+
+**File:** `api/server/controllers/agents/client.js`
+
+```javascript
+// parseDocumentContent() helper function (line 67-129)
+// Extracts text from documents using appropriate library
+
+// In addFileContextToMessage() (line 410-441)
+// Filters non-image attachments and parses their content
+const documentAttachments = attachments.filter(
+  (f) => !f.type?.startsWith('image/') && !f.type?.startsWith('video/') && !f.type?.startsWith('audio/')
+);
+```
+
+### Content Limits
+
+- Max 50,000 characters per file (truncated with `... [content truncated]` message)
+- This prevents token overflow for large documents
+
+### Format Passed to Agent
+
+```
+Uploaded document contents:
+=== Document: report.xlsx ===
+=== Sheet: Sheet1 ===
+Name,Value,Date
+Item1,100,2026-01-01
+...
+
+=== Document: contract.docx ===
+Full text content of the Word document...
+```
+
 ## Gemini Image Generation & Editing (Completed)
 
 Image generation and editing is implemented via a custom MCP server.
