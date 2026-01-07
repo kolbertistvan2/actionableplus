@@ -586,6 +586,42 @@ const presentationIndicators = [
 | React dashboard | `parseReactDashboard()` | ⭐⭐⭐⭐ Data tables |
 | Other code | "Kód" slide | ⭐⭐ (intentional) |
 
+### Title Generation Fix (Jan 2026)
+
+A címgenerálás mostantól csak a user üzenetét használja, nem az AI válaszát. Ez megakadályozza, hogy artifact tartalom kerüljön a conversation title-be és a share link címébe.
+
+**Problem solved:** Share linkek címe tartalmazta az artifact markdown tartalmat (`:::artifact{...}`).
+
+**Solution:** Üres `contentParts` átadása a `generateTitle()` hívásnak.
+
+**Key file:** `api/server/controllers/agents/client.js` (line ~1260)
+
+```javascript
+// Use only user text for title generation to avoid artifact content in titles
+const titleResult = await this.run.generateTitle({
+  // ...
+  contentParts: [],  // Empty - only use inputText (user message)
+  // ...
+});
+```
+
+**Note:** Ez a fix csak ÚJ beszélgetésekre vonatkozik. Meglévő rossz címek manuálisan javíthatók a MongoDB-ben vagy a chat átnevezésével.
+
+### Shared View Restrictions (Jan 2026)
+
+Megosztott artifact nézetben a Copy és Export gombok el vannak rejtve.
+
+**Key file:** `client/src/components/Artifacts/Artifacts.tsx`
+
+```tsx
+{!isSharedConvo && (
+  <>
+    <CopyCodeButton content={currentArtifact.content ?? ''} />
+    <ExportDropdown artifact={currentArtifact} previewRef={previewRef} />
+  </>
+)}
+```
+
 ## Footer Version Display
 
 A footer dinamikusan megjeleníti a git commit hash-t és branch-et.
