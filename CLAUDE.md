@@ -864,6 +864,36 @@ Railway-en külön Meilisearch service kell:
 1. Add New → Database → Meilisearch
 2. Állítsd be a `MEILI_HOST` és `MEILI_MASTER_KEY` változókat az ActionablePlus service-ben
 
+## Agent Marketplace
+
+Az Agent Marketplace lehetővé teszi, hogy a felhasználók böngésszék és használják a publikus agenteket.
+
+### Engedélyezés
+
+A `librechat.yaml`-ban:
+
+```yaml
+interface:
+  marketplace:
+    use: true  # Engedélyezi minden user számára
+```
+
+### Default Permissions
+
+| Szerepkör | Marketplace hozzáférés |
+|-----------|------------------------|
+| Admin | ✅ Alapból engedélyezve |
+| User | ❌ Alapból letiltva |
+
+A `librechat.yaml` `interface.marketplace.use: true` beállítással minden user számára engedélyezhető.
+
+### Működés
+
+1. Sidebar-on megjelenik a "Marketplace" gomb
+2. Felhasználók böngészhetik a publikus agenteket
+3. Egy kattintással hozzáadhatják a kedvenceikhez
+4. Admin beállíthatja, mely agentek legyenek publikusak
+
 ## Conversation Starters (Agent Builder Feature)
 
 Az Agent Builder-ben beállítható conversation starters, amelyek a chat indításakor kattintható gombok formájában jelennek meg.
