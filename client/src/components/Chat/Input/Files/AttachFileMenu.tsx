@@ -88,6 +88,19 @@ const AttachFileMenu = ({
     ephemeralAgent,
   );
 
+  // Common document MIME types for Excel, Word, PowerPoint
+  const documentMimeTypes = [
+    '.pdf,application/pdf',
+    '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.xls,application/vnd.ms-excel',
+    '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.doc,application/msword',
+    '.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.ppt,application/vnd.ms-powerpoint',
+    '.csv,text/csv',
+    '.txt,text/plain',
+  ].join(',');
+
   const handleUploadClick = (fileType?: FileUploadType) => {
     if (!inputRef.current) {
       return;
@@ -96,11 +109,11 @@ const AttachFileMenu = ({
     if (fileType === 'image') {
       inputRef.current.accept = 'image/*';
     } else if (fileType === 'document') {
-      inputRef.current.accept = '.pdf,application/pdf';
+      inputRef.current.accept = documentMimeTypes;
     } else if (fileType === 'image_document') {
-      inputRef.current.accept = 'image/*,.pdf,application/pdf';
+      inputRef.current.accept = `image/*,${documentMimeTypes}`;
     } else if (fileType === 'image_document_video_audio') {
-      inputRef.current.accept = 'image/*,.pdf,application/pdf,video/*,audio/*';
+      inputRef.current.accept = `image/*,${documentMimeTypes},video/*,audio/*`;
     } else {
       inputRef.current.accept = '';
     }
