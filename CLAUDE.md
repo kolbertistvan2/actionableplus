@@ -309,6 +309,56 @@ Item1,100,2026-01-01
 Full text content of the Word document...
 ```
 
+## Office Document Vision Support (Jan 2026)
+
+Agents can now "see" charts, diagrams, and visual elements in Office documents (Excel, Word, PowerPoint) by automatically converting them to PDF for Claude's native vision support.
+
+### How It Works
+
+1. User uploads Excel/Word/PowerPoint file
+2. `addDocuments()` override in agent client detects Office files
+3. LibreOffice headless converts Office → PDF (preserves charts/formatting)
+4. PDF is sent to Claude API using native document vision
+5. Agent receives BOTH text extraction (CSV/text) AND visual representation
+
+### Architecture
+
+```
+Excel/Word/PPT Upload
+    ├─→ parseDocumentContent() → Text/CSV extraction → fileContext
+    └─→ convertOfficeToPdf() → PDF → Claude native vision (charts visible!)
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `Dockerfile` | LibreOffice packages (libreoffice-calc, writer, impress) |
+| `api/server/services/Files/documents/officeToPdf.js` | Office→PDF converter |
+| `api/server/controllers/agents/client.js` | `addDocuments()` override |
+
+### Supported Office Formats
+
+| Format | Extension | Vision Support |
+|--------|-----------|----------------|
+| Excel | .xlsx, .xls | ✅ Charts visible |
+| Word | .docx, .doc | ✅ Formatting visible |
+| PowerPoint | .pptx, .ppt | ✅ Slides visible |
+| PDF | .pdf | ✅ Native (already worked) |
+
+### Dockerfile Dependencies
+
+```dockerfile
+# Added for Office→PDF conversion
+RUN apk add --no-cache libreoffice-calc libreoffice-writer libreoffice-impress
+```
+
+### Token Cost
+
+- Same as direct PDF upload (~1,000 tokens per page)
+- 10-sheet Excel ≈ $0.03
+- Agent sees both data (text) and visuals (charts)
+
 ## Gemini Image Generation & Editing (Completed)
 
 Image generation and editing is implemented via a custom MCP server.

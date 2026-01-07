@@ -7,6 +7,9 @@ FROM node:20-alpine AS node
 RUN apk add --no-cache jemalloc
 RUN apk add --no-cache python3 py3-pip uv
 
+# Install LibreOffice for Office→PDF conversion (Excel/Word/PPT charts vision support)
+RUN apk add --no-cache libreoffice-calc libreoffice-writer libreoffice-impress
+
 # Set environment variable to use jemalloc
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 

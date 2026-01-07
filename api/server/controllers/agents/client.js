@@ -56,6 +56,11 @@ const path = require('path');
 const XLSX = require('xlsx');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
+const {
+  isOfficeDocument,
+  convertOfficeToPdf,
+  cleanupConvertedPdf,
+} = require('~/server/services/Files/documents/officeToPdf');
 
 /**
  * Parse document content based on file type
@@ -488,6 +493,71 @@ class AgentClient extends BaseClient {
     );
     message.image_urls = image_urls.length ? image_urls : undefined;
     return files;
+  }
+
+  /**
+   * Override to convert Office documents (Excel, Word, PowerPoint) to PDF for vision support
+   * @param {TMessage} message - The message to add documents to
+   * @param {Array<MongoFile>} attachments - Array of document attachments
+   * @returns {Promise<Array<Partial<MongoFile>>>}
+   */
+  async addDocuments(message, attachments) {
+    const convertedPdfs = [];
+
+    // Convert Office documents to PDF for vision support
+    const processedAttachments = await Promise.all(
+      attachments.map(async (file) => {
+        if (!isOfficeDocument(file.type)) {
+          return file;
+        }
+
+        // Get the full file path
+        const fullPath = file.filepath?.startsWith('/')
+          ? path.join(process.cwd(), 'client', 'public', file.filepath)
+          : file.filepath;
+
+        if (!fullPath || !fs.existsSync(fullPath)) {
+          logger.warn(`[AgentClient.addDocuments] Office file not found: ${fullPath}`);
+          return file;
+        }
+
+        try {
+          const pdfPath = await convertOfficeToPdf(fullPath);
+          if (pdfPath) {
+            convertedPdfs.push(pdfPath);
+            logger.info(
+              `[AgentClient.addDocuments] Converted ${file.filename} to PDF for vision`,
+            );
+
+            // Return a modified file object pointing to the PDF
+            return {
+              ...file,
+              type: 'application/pdf',
+              filepath: pdfPath,
+              originalType: file.type,
+              originalFilepath: file.filepath,
+            };
+          }
+        } catch (error) {
+          logger.error(
+            `[AgentClient.addDocuments] Failed to convert ${file.filename}:`,
+            error,
+          );
+        }
+
+        return file;
+      }),
+    );
+
+    // Call parent addDocuments with processed attachments
+    const result = await super.addDocuments(message, processedAttachments);
+
+    // Clean up converted PDFs after processing
+    for (const pdfPath of convertedPdfs) {
+      cleanupConvertedPdf(pdfPath);
+    }
+
+    return result;
   }
 
   async buildMessages(
