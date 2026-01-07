@@ -280,11 +280,15 @@ export default function Artifacts() {
                   }}
                 />
               )}
-              <CopyCodeButton content={currentArtifact.content ?? ''} />
-              <ExportDropdown
-                artifact={currentArtifact}
-                previewRef={previewRef as React.MutableRefObject<SandpackPreviewRef>}
-              />
+              {!isSharedConvo && (
+                <>
+                  <CopyCodeButton content={currentArtifact.content ?? ''} />
+                  <ExportDropdown
+                    artifact={currentArtifact}
+                    previewRef={previewRef as React.MutableRefObject<SandpackPreviewRef>}
+                  />
+                </>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
