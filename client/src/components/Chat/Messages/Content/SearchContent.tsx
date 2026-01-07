@@ -17,6 +17,15 @@ import MarkdownLite from './MarkdownLite';
 import store from '~/store';
 import Part from './Part';
 
+/**
+ * Remove artifact blocks from text for display in MarkdownLite
+ * Artifact blocks are in format: :::artifact{...}...:::
+ */
+function removeArtifactBlocks(text: string): string {
+  if (!text) return text;
+  return text.replace(/:::artifact\{[^}]*\}[\s\S]*?\n:::\s*(?:\n|$)/g, '').trim();
+}
+
 const SearchContent = ({
   message,
   attachments,
@@ -77,7 +86,7 @@ const SearchContent = ({
       )}
       dir="auto"
     >
-      <MarkdownLite content={message.text || ''} />
+      <MarkdownLite content={removeArtifactBlocks(message.text || '')} />
     </div>
   );
 };
