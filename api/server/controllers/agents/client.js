@@ -51,6 +51,82 @@ const { getRoleByName } = require('~/models/Role');
 const { loadAgent } = require('~/models/Agent');
 const { getMCPManager } = require('~/config');
 const db = require('~/models');
+const fs = require('fs');
+const path = require('path');
+const XLSX = require('xlsx');
+const mammoth = require('mammoth');
+const pdfParse = require('pdf-parse');
+
+/**
+ * Parse document content based on file type
+ * @param {string} filePath - Path to the file
+ * @param {string} mimeType - MIME type of the file
+ * @param {string} filename - Original filename
+ * @returns {Promise<string|null>} - Extracted text content or null
+ */
+async function parseDocumentContent(filePath, mimeType, filename) {
+  try {
+    // Resolve the full file path
+    const fullPath = filePath.startsWith('/')
+      ? path.join(process.cwd(), 'client', 'public', filePath)
+      : filePath;
+
+    if (!fs.existsSync(fullPath)) {
+      logger.warn(`[parseDocumentContent] File not found: ${fullPath}`);
+      return null;
+    }
+
+    // Excel files
+    if (
+      mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      mimeType === 'application/vnd.ms-excel' ||
+      filename.endsWith('.xlsx') ||
+      filename.endsWith('.xls')
+    ) {
+      const workbook = XLSX.readFile(fullPath);
+      const sheets = [];
+      for (const sheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[sheetName];
+        const csv = XLSX.utils.sheet_to_csv(sheet);
+        sheets.push(`=== Sheet: ${sheetName} ===\n${csv}`);
+      }
+      return sheets.join('\n\n');
+    }
+
+    // Word documents
+    if (
+      mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      filename.endsWith('.docx')
+    ) {
+      const result = await mammoth.extractRawText({ path: fullPath });
+      return result.value;
+    }
+
+    // PDF files
+    if (mimeType === 'application/pdf' || filename.endsWith('.pdf')) {
+      const dataBuffer = fs.readFileSync(fullPath);
+      const data = await pdfParse(dataBuffer);
+      return data.text;
+    }
+
+    // Plain text files (txt, md, csv, json, etc.)
+    if (
+      mimeType?.startsWith('text/') ||
+      mimeType === 'application/json' ||
+      filename.endsWith('.txt') ||
+      filename.endsWith('.md') ||
+      filename.endsWith('.csv') ||
+      filename.endsWith('.json')
+    ) {
+      return fs.readFileSync(fullPath, 'utf-8');
+    }
+
+    return null;
+  } catch (error) {
+    logger.error(`[parseDocumentContent] Error parsing ${filename}:`, error);
+    return null;
+  }
+}
 
 const omitTitleOptions = new Set([
   'stream',
@@ -328,6 +404,39 @@ class AgentClient extends BaseClient {
       if (imageUrls.length > 0) {
         const imageContext = `\n\nUploaded image URLs (use these with edit_image/analyze_image tools):\n${imageUrls.join('\n')}`;
         message.fileContext = (message.fileContext || '') + imageContext;
+      }
+    }
+
+    // Add document content (Word, Excel, PDF, txt, md, csv, etc.)
+    const documentAttachments = attachments.filter(
+      (f) =>
+        !f.type?.startsWith('image/') &&
+        !f.type?.startsWith('video/') &&
+        !f.type?.startsWith('audio/'),
+    );
+
+    if (documentAttachments.length > 0) {
+      const documentContents = [];
+
+      for (const file of documentAttachments) {
+        if (!file.filepath) continue;
+
+        const content = await parseDocumentContent(file.filepath, file.type, file.filename);
+        if (content) {
+          // Limit content length to avoid token overflow (max ~50k chars per file)
+          const maxLength = 50000;
+          const truncatedContent =
+            content.length > maxLength
+              ? content.substring(0, maxLength) + '\n... [content truncated]'
+              : content;
+
+          documentContents.push(`\n=== Document: ${file.filename} ===\n${truncatedContent}`);
+        }
+      }
+
+      if (documentContents.length > 0) {
+        const docContext = `\n\nUploaded document contents:${documentContents.join('\n')}`;
+        message.fileContext = (message.fileContext || '') + docContext;
       }
     }
 
