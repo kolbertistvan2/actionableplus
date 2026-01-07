@@ -81,17 +81,28 @@ export default function NewChat({
           />
         </div>
 
-        {/* Actionable+ Logo - centered */}
-        <img
-          src="assets/logo-light.svg"
-          alt="Actionable+"
-          className="h-6 max-w-[140px] object-contain dark:hidden"
-        />
-        <img
-          src="assets/logo-dark.svg"
-          alt="Actionable+"
-          className="hidden h-6 max-w-[140px] object-contain dark:block"
-        />
+        {/* Actionable+ Logo - centered, clickable to go home */}
+        <button
+          onClick={() => {
+            clearMessagesCache(queryClient, conversation?.conversationId);
+            queryClient.invalidateQueries([QueryKeys.messages]);
+            newConvo();
+            navigate('/c/new', { state: { focusChat: true } });
+          }}
+          className="cursor-pointer"
+          aria-label="Go to homepage"
+        >
+          <img
+            src="assets/logo-light.svg"
+            alt="Actionable+"
+            className="h-6 max-w-[140px] object-contain dark:hidden"
+          />
+          <img
+            src="assets/logo-dark.svg"
+            alt="Actionable+"
+            className="hidden h-6 max-w-[140px] object-contain dark:block"
+          />
+        </button>
 
         {/* Right side - flex-1 for equal spacing */}
         <div className="flex flex-1 justify-end gap-0.5">
