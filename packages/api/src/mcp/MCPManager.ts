@@ -192,6 +192,7 @@ Please follow these instructions when using tools from the respective MCP server
     let connection: MCPConnection | undefined;
     const userId = user?.id;
     const logPrefix = userId ? `[MCP][User: ${userId}][${serverName}]` : `[MCP][${serverName}]`;
+    const conversationId = requestBody?.conversationId;
 
     try {
       if (userId && user) this.updateUserLastActivity(userId);
@@ -207,6 +208,37 @@ Please follow these instructions when using tools from the respective MCP server
         customUserVars,
         requestBody,
       });
+
+      /**
+       * Check if this connection was established for a different conversation.
+       * Browser MCP servers need per-conversation session isolation to prevent
+       * different conversations from sharing the same browser session.
+       */
+      if (connection.needsReconnectForConversation(conversationId)) {
+        logger.info(
+          `${logPrefix} Connection was for conversation ${connection.getSessionConversationId()}, ` +
+            `but current conversation is ${conversationId}. Forcing reconnection for session isolation.`,
+        );
+        await connection.disconnect();
+        connection = await this.getConnection({
+          serverName,
+          user,
+          flowManager,
+          tokenMethods,
+          oauthStart,
+          oauthEnd,
+          signal: options?.signal,
+          customUserVars,
+          requestBody,
+          forceNew: true,
+        });
+      }
+
+      // Track the conversationId for this connection's session
+      if (conversationId && !connection.getSessionConversationId()) {
+        connection.setSessionConversationId(conversationId);
+        logger.debug(`${logPrefix} Associated connection with conversation ${conversationId}`);
+      }
 
       if (!(await connection.isConnected())) {
         /** May happen if getUserConnection failed silently or app connection dropped */

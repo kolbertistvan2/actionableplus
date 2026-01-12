@@ -104,6 +104,13 @@ export class MCPConnection extends EventEmitter {
    */
   public readonly createdAt: number;
 
+  /**
+   * The conversationId that was used when this connection's session was established.
+   * Used to detect if reconnection is needed for a different conversation.
+   * This ensures browser sessions are isolated per conversation.
+   */
+  private sessionConversationId?: string;
+
   setRequestHeaders(headers: Record<string, string> | null): void {
     if (!headers) {
       return;
@@ -117,6 +124,40 @@ export class MCPConnection extends EventEmitter {
 
   getRequestHeaders(): Record<string, string> | null | undefined {
     return this.requestHeaders;
+  }
+
+  /**
+   * Sets the conversationId for this connection's session.
+   * Should be called when the connection is first used for a specific conversation.
+   */
+  setSessionConversationId(conversationId: string | undefined): void {
+    this.sessionConversationId = conversationId;
+  }
+
+  /**
+   * Gets the conversationId that was used when this connection's session was established.
+   */
+  getSessionConversationId(): string | undefined {
+    return this.sessionConversationId;
+  }
+
+  /**
+   * Checks if this connection needs to be reconnected for a different conversation.
+   * Returns true if the connection was established for a different conversation
+   * and should be reconnected to ensure browser session isolation.
+   */
+  needsReconnectForConversation(newConversationId: string | undefined): boolean {
+    // If no conversationId is provided, no reconnection needed
+    if (!newConversationId) {
+      return false;
+    }
+    // If this connection was never associated with a conversation, no reconnection needed
+    // (it will be associated with this conversation)
+    if (!this.sessionConversationId) {
+      return false;
+    }
+    // If the conversationId changed, reconnection is needed
+    return this.sessionConversationId !== newConversationId;
   }
 
   constructor(params: MCPConnectionParams) {
