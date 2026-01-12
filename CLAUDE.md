@@ -195,31 +195,63 @@ Browser automation is fully integrated with Stagehand MCP:
 
 ### Browser Session Isolation (Jan 2026)
 
-Browser sessions are isolated per conversation using Recoil atomFamily with `conversationId` keys.
+Browser sessions are fully isolated per conversation on multi-user platforms.
 
-**Problem solved:** When running 2 browser sessions in parallel (different chats), the sessions were mixing - e.g., Photo Editor chat showing Zalando URL from CRO Audit chat.
+#### Frontend: Recoil State Isolation
 
-**Root cause:** `ToolCall.tsx` was using `useParams()` to get `conversationId` from URL. For new chats, URL has no conversationId, so all chats shared the same `''` key.
+Recoil atomFamily with `conversationId` keys ensures UI state is per-conversation.
 
-**Solution:** Pass `conversationId` through props from message context, not URL.
+**Key files using consistent `browserConversationId` logic:**
 
-**Key changes:**
+| File | Purpose |
+|------|---------|
+| `ChatForm.tsx` | Browser thumbnail, toggle button |
+| `SidePanelGroup.tsx` | Browser side panel |
+| `ToolCall.tsx` | Sets UIResource when browser tool runs |
 
-| File | Change |
-|------|--------|
-| `ToolCall.tsx` | Accept `conversationId` prop, fall back to URL only if prop not provided |
-| `Part.tsx` | Pass `conversationId` prop to `ToolCall` |
-| `ContentParts.tsx` | Pass `conversationId` from MessageContext to `Part` |
-| `SearchContent.tsx` | Pass `message.conversationId` to `Part` |
-| `ChatForm.tsx` | Use `conversation?.conversationId` fallback for browser state keys |
-
-**Recoil state keys (properly isolated):**
+**Recoil state keys:**
 ```typescript
 activeUIResourceFamily(conversationId)      // Browser resource per chat
 browserSidePanelOpenFamily(conversationId)  // Panel open state per chat
 browserThumbnailDismissedFamily(conversationId) // Thumbnail dismissed per chat
 currentBrowsedUrlFamily(conversationId)     // Current URL per chat
 ```
+
+#### Backend: MCP Connection Isolation
+
+MCP connections are reconnected when switching conversations to ensure fresh browser sessions.
+
+**Key files:**
+
+| File | Change |
+|------|--------|
+| `packages/api/src/mcp/connection.ts` | `sessionConversationId` tracking, `needsReconnectForConversation()` |
+| `packages/api/src/mcp/MCPManager.ts` | Force reconnect when conversationId changes |
+
+**Flow:**
+```
+Chat A: browser tool → MCP session created, sessionConversationId = "chat-A"
+Chat B: browser tool → needsReconnectForConversation("chat-B") = true
+                     → disconnect → new MCP session, sessionConversationId = "chat-B"
+```
+
+#### Browserbase: Fresh Sessions
+
+**IMPORTANT:** Do NOT set `BROWSERBASE_CONTEXT_ID` on Railway stagehand-mcp-server!
+
+- With `BROWSERBASE_CONTEXT_ID`: All sessions share cookies/localStorage (BAD for multi-user)
+- Without `BROWSERBASE_CONTEXT_ID`: Each MCP session gets fresh browser (GOOD)
+
+#### Agent Behavior: Explain Before Execute
+
+Global instructions injected for all MCP tool agents ensure text response before tool calls.
+
+**File:** `api/server/controllers/agents/client.js` - `browserAgentInstructions` constant
+
+This helps because:
+1. User gets immediate feedback
+2. Conversation gets an ID before browser tool runs
+3. Browser session isolation works correctly
 
 ### librechat.yaml MCP Config
 
