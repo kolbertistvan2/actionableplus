@@ -34,9 +34,14 @@ const SidePanelGroup = memo(
     artifacts,
     children,
   }: SidePanelProps) => {
-    const { conversationId = '' } = useParams<{ conversationId: string }>();
-    const activeUIResource = useRecoilValue(activeUIResourceFamily(conversationId));
-    const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(conversationId));
+    const { conversationId: convId = '' } = useParams<{ conversationId: string }>();
+    const conversation = useRecoilValue(store.conversationByIndex(0));
+    // Use same logic as ChatForm to get consistent conversationId for browser state
+    // 'new' is a special URL value for new chats, not a valid conversationId
+    const validConvId = convId && convId !== 'new' ? convId : '';
+    const browserConversationId = validConvId || conversation?.conversationId || '';
+    const activeUIResource = useRecoilValue(activeUIResourceFamily(browserConversationId));
+    const [isBrowserPanelOpen, setIsBrowserPanelOpen] = useRecoilState(browserSidePanelOpenFamily(browserConversationId));
 
     const { data: startupConfig } = useGetStartupConfig();
     const interfaceConfig = useMemo(
