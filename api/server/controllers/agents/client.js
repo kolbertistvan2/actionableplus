@@ -48,6 +48,42 @@ const { createContextHandlers } = require('~/app/clients/prompts');
 const { getConvoFiles } = require('~/models/Conversation');
 const BaseClient = require('~/app/clients/BaseClient');
 const { getRoleByName } = require('~/models/Role');
+
+/**
+ * Global instructions for agents with browser/MCP tools.
+ * Ensures agents explain their plan before starting tool operations.
+ */
+const browserAgentInstructions = `
+## CRITICAL: Respond Before Tool Actions
+
+**NEVER start a tool call as your very first action.** Always provide a brief text response first.
+
+Before using browser or any complex tool, you MUST:
+1. Acknowledge the user's request in 1-2 sentences
+2. Briefly outline your plan (2-4 bullet points)
+3. Say something like "Starting now..." or "Let me begin..."
+4. THEN call the tool
+
+This ensures the user gets immediate feedback and knows what you're attempting.
+
+Example:
+\`\`\`
+User: Check example.com for issues
+
+You: I'll analyze example.com for you.
+
+My plan:
+1. Navigate to the homepage
+2. Check the main user flows
+3. Document any issues found
+
+Starting the browser now:
+[tool call]
+\`\`\`
+
+❌ WRONG: First response is a tool call with no explanation
+✅ CORRECT: First explain, then execute
+`.trim();
 const { loadAgent } = require('~/models/Agent');
 const { getMCPManager } = require('~/config');
 const db = require('~/models');
@@ -690,6 +726,9 @@ class AgentClient extends BaseClient {
           systemContent = [systemContent, mcpInstructions].filter(Boolean).join('\n\n');
           logger.debug('[AgentClient] Injected MCP instructions for servers:', mcpServers);
         }
+        // Add global browser agent instructions for MCP tool agents
+        systemContent = [browserAgentInstructions, systemContent].filter(Boolean).join('\n\n');
+        logger.debug('[AgentClient] Injected browser agent instructions');
       } catch (error) {
         logger.error('[AgentClient] Failed to inject MCP instructions:', error);
       }

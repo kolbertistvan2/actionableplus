@@ -253,7 +253,20 @@ export class MCPConnection extends EventEmitter {
           const abortController = new AbortController();
 
           /** Add OAuth token to headers if available */
-          const headers = { ...options.headers };
+          /** Filter out unresolved template variables (e.g., {{LIBRECHAT_BODY_CONVERSATIONID}}) */
+          /** These will be resolved and sent via setRequestHeaders() during tool calls */
+          const headers: Record<string, string> = {};
+          if (options.headers) {
+            for (const [key, value] of Object.entries(options.headers)) {
+              if (typeof value === 'string' && value.includes('{{LIBRECHAT_BODY_')) {
+                logger.debug(
+                  `${this.getLogPrefix()} Skipping unresolved header template: ${key}`,
+                );
+                continue;
+              }
+              headers[key] = value;
+            }
+          }
           if (this.oauthTokens?.access_token) {
             headers['Authorization'] = `Bearer ${this.oauthTokens.access_token}`;
           }
@@ -309,7 +322,20 @@ export class MCPConnection extends EventEmitter {
           const abortController = new AbortController();
 
           /** Add OAuth token to headers if available */
-          const headers = { ...options.headers };
+          /** Filter out unresolved template variables (e.g., {{LIBRECHAT_BODY_CONVERSATIONID}}) */
+          /** These will be resolved and sent via setRequestHeaders() during tool calls */
+          const headers: Record<string, string> = {};
+          if (options.headers) {
+            for (const [key, value] of Object.entries(options.headers)) {
+              if (typeof value === 'string' && value.includes('{{LIBRECHAT_BODY_')) {
+                logger.debug(
+                  `${this.getLogPrefix()} Skipping unresolved header template: ${key}`,
+                );
+                continue;
+              }
+              headers[key] = value;
+            }
+          }
           if (this.oauthTokens?.access_token) {
             headers['Authorization'] = `Bearer ${this.oauthTokens.access_token}`;
           }
