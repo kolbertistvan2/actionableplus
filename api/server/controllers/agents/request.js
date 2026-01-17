@@ -146,6 +146,18 @@ const ResumableAgentController = async (req, res, next, initializeClient, addTit
       GenerationJobManager.updateMetadata(streamId, { sender: client.sender });
     }
 
+    // Early title generation for new conversations (fire and forget)
+    // This ensures title is generated even if agent gets stuck during long operations
+    const isNewConvoEarly = !reqConversationId || reqConversationId === 'new';
+    let earlyTitleStarted = false;
+    if (isNewConvoEarly && parentMessageId === Constants.NO_PARENT && addTitle) {
+      earlyTitleStarted = true;
+      addTitle(req, { text, response: { conversationId }, client }).catch((err) => {
+        logger.error('[ResumableAgentController] Early title generation error', err);
+      });
+      logger.debug('[ResumableAgentController] Early title generation started');
+    }
+
     // Store reference to client's contentParts - graph will be set when run is created
     if (client?.contentParts) {
       GenerationJobManager.setContentParts(streamId, client.contentParts);
@@ -272,11 +284,13 @@ const ResumableAgentController = async (req, res, next, initializeClient, addTit
         // Check abort state BEFORE calling completeJob (which triggers abort signal for cleanup)
         const wasAbortedBeforeComplete = job.abortController.signal.aborted;
         const isNewConvo = !reqConversationId || reqConversationId === 'new';
+        // Skip late title generation if early title was already started
         const shouldGenerateTitle =
           addTitle &&
           parentMessageId === Constants.NO_PARENT &&
           isNewConvo &&
-          !wasAbortedBeforeComplete;
+          !wasAbortedBeforeComplete &&
+          !earlyTitleStarted;
 
         if (!wasAbortedBeforeComplete) {
           const finalEvent = {

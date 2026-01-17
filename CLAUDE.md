@@ -59,6 +59,7 @@ No local Docker needed for deployment - Railway builds from Dockerfile.
 | `librechat.yaml` | Main configuration (optional) |
 | `docker-compose.yml` | Local Docker setup |
 | `docker-compose.override.yml` | Local customizations |
+| `client/vite.config.ts` | PWA manifest (app name, icons) |
 
 ## Current Status
 
@@ -757,6 +758,37 @@ Megosztott artifact nézetben a Copy és Export gombok el vannak rejtve.
   </>
 )}
 ```
+
+## PWA / Desktop App
+
+Az app telepíthető desktop appként (PWA - Progressive Web App).
+
+### Konfiguráció
+
+**Fájl:** `client/vite.config.ts` (94-128. sor)
+
+```typescript
+manifest: {
+  name: 'Actionable+ AI Consultant',
+  short_name: 'Actionable+',
+  display: 'standalone',
+  background_color: '#000000',
+  theme_color: '#009688',
+  icons: [...]
+}
+```
+
+### Telepítés
+
+1. Nyisd meg `https://app.actionableplus.com` Chrome-ban vagy Edge-ben
+2. Kattints a címsor jobb oldalán a telepítés ikonra (⊕)
+3. "Install Actionable+" - kész
+
+### Frissítés után
+
+Ha módosítod a manifest-et (név, ikonok):
+1. Deploy után töröld a régi PWA-t
+2. Telepítsd újra a böngészőből
 
 ## Footer Version Display
 
