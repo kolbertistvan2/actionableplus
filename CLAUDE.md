@@ -460,6 +460,28 @@ Gemini image generation is NOT available in all countries. The MCP server must r
 GOOGLE_KEY=<gemini-api-key>
 ```
 
+### Generated Image Persistence (Jan 2026 Fix)
+
+Generated images now persist correctly when reloading conversations.
+
+**Problem solved:** MCP-generated images appeared during streaming but disappeared when reloading the chat.
+
+**Root cause:** Images were saved to Files collection but not persisted to the Message's `files` field because the message was already saved during streaming (before image generation completed).
+
+**Solution:** Added `updateMessage` call in `api/server/controllers/agents/request.js` to update the message with generated files after artifact promises resolve.
+
+**Key code (lines 313-322 for resumable, 688-697 for legacy):**
+```javascript
+} else if (response.files && response.files.length > 0) {
+  // Message was already saved during streaming, but we need to update it with generated files
+  await updateMessage(
+    req,
+    { messageId, files: response.files },
+    { context: 'api/server/controllers/agents/request.js - update generated files' },
+  );
+}
+```
+
 ## Claude Skills MCP (Document Generation)
 
 Custom MCP server that exposes Anthropic Claude Skills as tools for document generation (Excel, PowerPoint, Word, PDF, etc.).

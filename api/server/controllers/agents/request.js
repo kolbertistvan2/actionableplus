@@ -8,7 +8,7 @@ const {
 } = require('@librechat/api');
 const { handleAbortError } = require('~/server/middleware');
 const { disposeClient, clientRegistry, requestDataMap } = require('~/server/cleanup');
-const { saveMessage } = require('~/models');
+const { saveMessage, updateMessage } = require('~/models');
 
 function createCloseHandler(abortController) {
   return function (manual) {
@@ -309,6 +309,16 @@ const ResumableAgentController = async (req, res, next, initializeClient, addTit
               req,
               { ...response, user: userId },
               { context: 'api/server/controllers/agents/request.js - resumable response end' },
+            );
+          } else if (response.files && response.files.length > 0) {
+            // Message was already saved during streaming, but we need to update it with generated files
+            await updateMessage(
+              req,
+              { messageId, files: response.files },
+              { context: 'api/server/controllers/agents/request.js - update generated files' },
+            );
+            logger.debug(
+              `[ResumableAgentController] Updated message ${messageId} with ${response.files.length} generated files`,
             );
           }
         } else {
@@ -674,6 +684,16 @@ const _LegacyAgentController = async (req, res, next, initializeClient, addTitle
           req,
           { ...finalResponse, user: userId },
           { context: 'api/server/controllers/agents/request.js - response end' },
+        );
+      } else if (finalResponse.files && finalResponse.files.length > 0) {
+        // Message was already saved during streaming, but we need to update it with generated files
+        await updateMessage(
+          req,
+          { messageId, files: finalResponse.files },
+          { context: 'api/server/controllers/agents/request.js - update generated files (legacy)' },
+        );
+        logger.debug(
+          `[AgentController] Updated message ${messageId} with ${finalResponse.files.length} generated files`,
         );
       }
     }
