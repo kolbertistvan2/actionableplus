@@ -46,24 +46,28 @@ endpoints:
     # Enable native Google Search Grounding for Gemini models
     web_search: true
   custom:
+    # Perplexity API - Web search grounded LLM
+    # Note: sonar-deep-research may have long response times (30-60s)
+    # See: https://www.librechat.ai/docs/configuration/librechat_yaml/ai_endpoints/perplexity
     - name: "Perplexity"
       apiKey: "${PERPLEXITY_API_KEY}"
       baseURL: "https://api.perplexity.ai/"
       models:
         default:
-          - "sonar-deep-research"
           - "sonar-reasoning-pro"
           - "sonar-reasoning"
           - "sonar-pro"
           - "sonar"
-          - "r1-1776"
+          - "sonar-deep-research"
         fetch: false
       titleConvo: true
       titleModel: "sonar"
-      summarize: false
+      summarize: true
+      summaryModel: "sonar"
       forcePrompt: false
-      dropParams: ["stop", "frequency_penalty"]
+      dropParams: ["stop", "frequency_penalty", "presence_penalty", "user"]
       modelDisplayLabel: "Perplexity"
+      iconURL: "https://www.perplexity.ai/favicon.ico"
 
 # Token Balance System - DISABLED
 # balance:
