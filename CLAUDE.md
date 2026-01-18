@@ -625,9 +625,49 @@ BASE_URL=https://skills-mcp-server-production.up.railway.app
 
 ## File Storage Configuration
 
+### Firebase CDN (Production - Railway)
+
+Files are stored in Firebase Cloud Storage for persistent, scalable storage.
+
+**Configuration:** `librechat.yaml`
+```yaml
+fileStrategy: "firebase"
+```
+
+**Railway Environment Variables:**
+```bash
+FIREBASE_API_KEY=AIzaSyAI2_...
+FIREBASE_AUTH_DOMAIN=gen-lang-client-0654238295.firebaseapp.com
+FIREBASE_PROJECT_ID=gen-lang-client-0654238295
+FIREBASE_STORAGE_BUCKET=gen-lang-client-0654238295.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=1081421927956
+FIREBASE_APP_ID=1:1081421927956:web:...
+```
+
+**Firebase Storage Rules (Firebase Console → Storage → Rules):**
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /images/{userId}/{fileName} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+**CORS Configuration:**
+```bash
+# cors.json
+[{"origin": ["https://app.actionableplus.com"], "method": ["GET", "POST", "DELETE", "PUT"], "maxAgeSeconds": 3600}]
+
+# Apply with gsutil
+gsutil cors set cors.json gs://gen-lang-client-0654238295.firebasestorage.app
+```
+
 ### TTL (Time-To-Live)
 
-Uploaded files have a **30 day TTL** by default. After 30 days, MongoDB automatically deletes the file record (physical file remains on disk).
+Uploaded files have a **30 day TTL** by default. After 30 days, MongoDB automatically deletes the file record.
 
 **Configuration:** `api/models/File.js` line 74
 
@@ -640,7 +680,7 @@ expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days TTL
 - File is used in agent/assistant context
 - File is created with `disableTTL: true` flag
 
-### Storage Volumes
+### Local Storage (Development - Docker)
 
 ```yaml
 # docker-compose.yml
