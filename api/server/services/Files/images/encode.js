@@ -140,7 +140,9 @@ async function encodeAndFormat(req, files, params, mode) {
       } catch (error) {
         logger.error('Error processing image from blob storage:', error);
       }
-    } else if (source !== FileSources.local && base64Only.has(effectiveEndpoint)) {
+    } else if (source !== FileSources.local && base64Only.has(effectiveEndpoint) && mode !== VisionModes.agents) {
+      // For non-agent modes with Anthropic/Google/etc, convert URL to base64
+      // For agents mode, keep URL so MCP tools can access it directly
       const [_file, imageURL] = await preparePayload(req, file);
       promises.push([_file, await fetchImageToBase64(imageURL)]);
       continue;
