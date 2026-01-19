@@ -95,6 +95,9 @@ const blobStorageSources = new Set([FileSources.azure_blob, FileSources.s3]);
 async function encodeAndFormat(req, files, params, mode) {
   const { provider, endpoint } = params;
   const effectiveEndpoint = endpoint ?? provider;
+
+  logger.info(`[encodeAndFormat] mode=${mode}, effectiveEndpoint=${effectiveEndpoint}, VisionModes.agents=${VisionModes.agents}`);
+  logger.info(`[encodeAndFormat] files count: ${files?.length || 0}`);
   const promises = [];
   /** @type {Record<FileSources, Pick<ReturnType<typeof getStrategyFunctions>, 'prepareImagePayload' | 'getDownloadStream'>>} */
   const encodingMethods = {};
@@ -143,10 +146,12 @@ async function encodeAndFormat(req, files, params, mode) {
     } else if (source !== FileSources.local && base64Only.has(effectiveEndpoint) && mode !== VisionModes.agents) {
       // For non-agent modes with Anthropic/Google/etc, convert URL to base64
       // For agents mode, keep URL so MCP tools can access it directly
+      logger.info(`[encodeAndFormat] Converting to base64: source=${source}, endpoint=${effectiveEndpoint}, mode=${mode}`);
       const [_file, imageURL] = await preparePayload(req, file);
       promises.push([_file, await fetchImageToBase64(imageURL)]);
       continue;
     }
+    logger.info(`[encodeAndFormat] Keeping as URL: source=${source}, endpoint=${effectiveEndpoint}, mode=${mode}`);
     promises.push(preparePayload(req, file));
   }
 
@@ -218,6 +223,8 @@ async function encodeAndFormat(req, files, params, mode) {
     };
 
     if (mode === VisionModes.agents) {
+      // For agents mode, keep the image_url format with URL intact
+      // This allows MCP tools to access images via URL
       result.image_urls.push({ ...imagePart });
       result.files.push({ ...fileMetadata });
       continue;
