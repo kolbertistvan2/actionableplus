@@ -446,8 +446,7 @@ class AgentClient extends BaseClient {
       if (imageUrls.length > 0) {
         const imageContext = `\n\nUploaded image URLs (use these with edit_image/analyze_image tools):\n${imageUrls.join('\n')}`;
         message.fileContext = (message.fileContext || '') + imageContext;
-        logger.info(`[AgentClient] Added ${imageUrls.length} image URLs to fileContext`);
-        logger.debug(`[AgentClient] Image URLs: ${imageUrls.join(', ')}`);
+        logger.info(`[AgentClient] Added ${imageUrls.length} image URLs to fileContext: ${imageUrls.join(', ')}`);
       }
     }
 
