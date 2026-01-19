@@ -212,10 +212,13 @@ async function encodeAndFormat(req, files, params, mode) {
       }
     }
 
+    const isUrl = imageContent.startsWith('http');
+    logger.info(`[encodeAndFormat] imageContent isUrl=${isUrl}, starts with: ${imageContent.substring(0, 50)}...`);
+
     const imagePart = {
       type: ContentTypes.IMAGE_URL,
       image_url: {
-        url: imageContent.startsWith('http')
+        url: isUrl
           ? imageContent
           : `data:${file.type};base64,${imageContent}`,
         detail,
@@ -225,6 +228,7 @@ async function encodeAndFormat(req, files, params, mode) {
     if (mode === VisionModes.agents) {
       // For agents mode, keep the image_url format with URL intact
       // This allows MCP tools to access images via URL
+      logger.info(`[encodeAndFormat] agents mode: passing image as ${isUrl ? 'URL' : 'base64'}`);
       result.image_urls.push({ ...imagePart });
       result.files.push({ ...fileMetadata });
       continue;
