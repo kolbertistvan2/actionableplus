@@ -433,6 +433,7 @@ class AgentClient extends BaseClient {
 
     // Add uploaded image URLs to fileContext so MCP tools can access them
     const imageAttachments = attachments.filter((f) => f.type?.startsWith('image/'));
+    logger.info(`[AgentClient] addFileContextToMessage called with ${attachments?.length || 0} attachments, ${imageAttachments.length} images`);
     if (imageAttachments.length > 0) {
       const imageUrls = imageAttachments
         .filter((f) => f.filepath)
@@ -445,6 +446,8 @@ class AgentClient extends BaseClient {
       if (imageUrls.length > 0) {
         const imageContext = `\n\nUploaded image URLs (use these with edit_image/analyze_image tools):\n${imageUrls.join('\n')}`;
         message.fileContext = (message.fileContext || '') + imageContext;
+        logger.info(`[AgentClient] Added ${imageUrls.length} image URLs to fileContext`);
+        logger.debug(`[AgentClient] Image URLs: ${imageUrls.join(', ')}`);
       }
     }
 
