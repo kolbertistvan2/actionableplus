@@ -75,6 +75,7 @@ async function fetchImageToBase64(url) {
 const base64Only = new Set([
   EModelEndpoint.google,
   EModelEndpoint.anthropic,
+  EModelEndpoint.agents,  // Agents use Anthropic/Google models which need base64
   'Ollama',
   'ollama',
   EModelEndpoint.bedrock,
