@@ -84,6 +84,38 @@ Starting the browser now:
 ❌ WRONG: First response is a tool call with no explanation
 ✅ CORRECT: First explain, then execute
 `.trim();
+
+/**
+ * Global instructions for agents with image editing tools.
+ * Ensures agents use the URL from fileContext instead of requesting base64.
+ */
+const imageToolInstructions = `
+## CRITICAL: Using Uploaded Images with edit_image/analyze_image Tools
+
+When the user uploads an image, you will see the image URL in the context like this:
+\`\`\`
+Uploaded image URLs (use these with edit_image/analyze_image tools):
+- filename.jpg: https://firebasestorage.googleapis.com/...
+\`\`\`
+
+**YOU MUST use this URL directly with the tools:**
+\`\`\`
+edit_image(image: "https://firebasestorage.googleapis.com/...", instruction: "your edit instructions")
+analyze_image(image: "https://firebasestorage.googleapis.com/...", prompt: "what to analyze")
+\`\`\`
+
+**NEVER:**
+- Request base64 data from the user
+- Say you cannot access the image
+- Generate error messages about image format
+- Claim the image is not available
+
+**ALWAYS:**
+- Extract the URL from the "Uploaded image URLs" context
+- Call the tool immediately with that URL
+- The tools accept HTTPS URLs directly - no conversion needed
+`.trim();
+
 const { loadAgent } = require('~/models/Agent');
 const { getMCPManager } = require('~/config');
 const db = require('~/models');
@@ -731,6 +763,10 @@ class AgentClient extends BaseClient {
         // Add global browser agent instructions for MCP tool agents
         systemContent = [browserAgentInstructions, systemContent].filter(Boolean).join('\n\n');
         logger.debug('[AgentClient] Injected browser agent instructions');
+
+        // Add global image tool instructions for agents with edit_image/analyze_image
+        systemContent = [imageToolInstructions, systemContent].filter(Boolean).join('\n\n');
+        logger.debug('[AgentClient] Injected image tool instructions');
       } catch (error) {
         logger.error('[AgentClient] Failed to inject MCP instructions:', error);
       }
