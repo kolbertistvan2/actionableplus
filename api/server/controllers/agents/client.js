@@ -1389,8 +1389,13 @@ class AgentClient extends BaseClient {
     const { handleLLMEnd, collected: collectedMetadata } = createMetadataAggregator();
     const { req, agent } = this.options;
     const appConfig = req.config;
+
+    // Debug logging for title generation
+    logger.debug(`[titleConvo] agent.endpoint: "${agent.endpoint}", agent.provider: "${agent.provider}", EModelEndpoint.agents: "${EModelEndpoint.agents}"`);
+
     // For agents endpoint, use the actual provider (google, anthropic, etc.) for title generation
     let endpoint = agent.endpoint === EModelEndpoint.agents ? agent.provider : agent.endpoint;
+    logger.debug(`[titleConvo] Using endpoint: "${endpoint}" for title generation`);
 
     /** @type {import('@librechat/agents').ClientOptions} */
     let clientOptions = {
