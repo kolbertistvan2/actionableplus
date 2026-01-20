@@ -1389,7 +1389,8 @@ class AgentClient extends BaseClient {
     const { handleLLMEnd, collected: collectedMetadata } = createMetadataAggregator();
     const { req, agent } = this.options;
     const appConfig = req.config;
-    let endpoint = agent.endpoint;
+    // For agents endpoint, use the actual provider (google, anthropic, etc.) for title generation
+    let endpoint = agent.endpoint === EModelEndpoint.agents ? agent.provider : agent.endpoint;
 
     /** @type {import('@librechat/agents').ClientOptions} */
     let clientOptions = {
@@ -1428,8 +1429,8 @@ class AgentClient extends BaseClient {
           `[api/server/controllers/agents/client.js #titleConvo] Error getting title endpoint config for "${endpointConfig.titleEndpoint}", falling back to default`,
           error,
         );
-        // Fall back to original provider config
-        endpoint = agent.endpoint;
+        // Fall back to original provider config (use agent.provider for agents endpoint)
+        endpoint = agent.endpoint === EModelEndpoint.agents ? agent.provider : agent.endpoint;
         titleProviderConfig = getProviderConfig({ provider: endpoint, appConfig });
       }
     }
