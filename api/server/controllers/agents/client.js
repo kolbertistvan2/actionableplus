@@ -512,7 +512,10 @@ class AgentClient extends BaseClient {
       for (const file of documentAttachments) {
         if (!file.filepath) continue;
 
-        const content = await parseDocumentContent(file.filepath, file.type, file.filename);
+        // Build full URL for Firebase storage files
+        const fileUrl = file.filepath.startsWith('http') ? file.filepath : `${baseUrl}${file.filepath}`;
+        logger.debug(`[AgentClient] Parsing document: ${file.filename}, URL: ${fileUrl}`);
+        const content = await parseDocumentContent(fileUrl, file.type, file.filename);
         if (content) {
           // Limit content length to avoid token overflow (max ~50k chars per file)
           const maxLength = 50000;
