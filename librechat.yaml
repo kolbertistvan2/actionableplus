@@ -43,10 +43,6 @@ endpoints:
     recursionLimit: 50
     # Maximum recursion limit allowed (default: 25)
     maxRecursionLimit: 100
-    # Title generation - use the current agent/model itself
-    titleConvo: true
-    titleMethod: "completion"
-    titleModel: "current_model"
   google:
     # Enable native Google Search Grounding for Gemini models
     web_search: true

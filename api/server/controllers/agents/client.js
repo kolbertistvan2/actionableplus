@@ -1399,11 +1399,8 @@ class AgentClient extends BaseClient {
     let titleProviderConfig = getProviderConfig({ provider: endpoint, appConfig });
 
     /** @type {TEndpoint | undefined} */
-    // For agents, use the agents endpoint config for title settings, not the provider's config
-    const agentsEndpointConfig = appConfig.endpoints?.[EModelEndpoint.agents];
     const endpointConfig =
       appConfig.endpoints?.all ??
-      agentsEndpointConfig ??
       appConfig.endpoints?.[endpoint] ??
       titleProviderConfig.customEndpointConfig;
     if (!endpointConfig) {
