@@ -46,6 +46,7 @@ endpoints:
     # Title generation settings for agents
     titleConvo: true
     titleMethod: "completion"  # More compatible than "structured"
+    titleEndpoint: "anthropic"  # Use Anthropic API for title generation
     titleModel: "claude-haiku-4-5-20251001"  # Fast, cheap, reliable
   google:
     # Enable native Google Search Grounding for Gemini models
