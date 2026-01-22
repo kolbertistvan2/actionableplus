@@ -139,14 +139,31 @@ const {
  */
 async function parseDocumentContent(filePath, mimeType, filename) {
   try {
-    // Resolve the full file path
-    const fullPath = filePath.startsWith('/')
-      ? path.join(process.cwd(), 'client', 'public', filePath)
-      : filePath;
+    let buffer;
+    let isRemote = false;
 
-    if (!fs.existsSync(fullPath)) {
-      logger.warn(`[parseDocumentContent] File not found: ${fullPath}`);
-      return null;
+    // Check if filepath is a URL (Firebase storage)
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      isRemote = true;
+      logger.debug(`[parseDocumentContent] Fetching remote file: ${filePath}`);
+      const fetch = require('node-fetch');
+      const response = await fetch(filePath);
+      if (!response.ok) {
+        logger.warn(`[parseDocumentContent] Failed to fetch remote file: ${response.status}`);
+        return null;
+      }
+      buffer = await response.buffer();
+    } else {
+      // Resolve the full file path for local files
+      const fullPath = filePath.startsWith('/')
+        ? path.join(process.cwd(), 'client', 'public', filePath)
+        : filePath;
+
+      if (!fs.existsSync(fullPath)) {
+        logger.warn(`[parseDocumentContent] File not found: ${fullPath}`);
+        return null;
+      }
+      buffer = fs.readFileSync(fullPath);
     }
 
     // Excel files
@@ -156,7 +173,7 @@ async function parseDocumentContent(filePath, mimeType, filename) {
       filename.endsWith('.xlsx') ||
       filename.endsWith('.xls')
     ) {
-      const workbook = XLSX.readFile(fullPath);
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
       const sheets = [];
       for (const sheetName of workbook.SheetNames) {
         const sheet = workbook.Sheets[sheetName];
@@ -171,14 +188,13 @@ async function parseDocumentContent(filePath, mimeType, filename) {
       mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       filename.endsWith('.docx')
     ) {
-      const result = await mammoth.extractRawText({ path: fullPath });
+      const result = await mammoth.extractRawText({ buffer });
       return result.value;
     }
 
     // PDF files
     if (mimeType === 'application/pdf' || filename.endsWith('.pdf')) {
-      const dataBuffer = fs.readFileSync(fullPath);
-      const data = await pdfParse(dataBuffer);
+      const data = await pdfParse(buffer);
       return data.text;
     }
 
@@ -191,7 +207,7 @@ async function parseDocumentContent(filePath, mimeType, filename) {
       filename.endsWith('.csv') ||
       filename.endsWith('.json')
     ) {
-      return fs.readFileSync(fullPath, 'utf-8');
+      return buffer.toString('utf-8');
     }
 
     return null;
