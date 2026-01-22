@@ -192,6 +192,18 @@ async function parseDocumentContent(filePath, mimeType, filename) {
       return result.value;
     }
 
+    // PowerPoint presentations
+    if (
+      mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+      mimeType === 'application/vnd.ms-powerpoint' ||
+      filename.endsWith('.pptx') ||
+      filename.endsWith('.ppt')
+    ) {
+      const officeparser = require('officeparser');
+      const text = await officeparser.parseOfficeAsync(buffer);
+      return text;
+    }
+
     // PDF files
     if (mimeType === 'application/pdf' || filename.endsWith('.pdf')) {
       const data = await pdfParse(buffer);
