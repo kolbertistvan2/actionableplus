@@ -43,11 +43,10 @@ endpoints:
     recursionLimit: 50
     # Maximum recursion limit allowed (default: 25)
     maxRecursionLimit: 100
-    # Title generation settings for agents
+    # Title generation - use the current agent/model itself
     titleConvo: true
-    titleMethod: "completion"  # More compatible than "structured"
-    titleEndpoint: "anthropic"  # Use Anthropic API for title generation
-    titleModel: "claude-haiku-4-5-20251001"  # Fast, cheap, reliable
+    titleMethod: "completion"
+    titleModel: "current_model"
   google:
     # Enable native Google Search Grounding for Gemini models
     web_search: true
