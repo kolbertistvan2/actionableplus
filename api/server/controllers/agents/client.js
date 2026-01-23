@@ -149,10 +149,12 @@ async function parseDocumentContent(filePath, mimeType, filename) {
       const fetch = require('node-fetch');
       const response = await fetch(filePath);
       if (!response.ok) {
-        logger.warn(`[parseDocumentContent] Failed to fetch remote file: ${response.status}`);
+        logger.warn(`[parseDocumentContent] Failed to fetch remote file: ${response.status} ${response.statusText}`);
         return null;
       }
-      buffer = await response.buffer();
+      // Use arrayBuffer() instead of deprecated buffer() for proper binary handling
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
     } else {
       // Resolve the full file path for local files
       const fullPath = filePath.startsWith('/')
@@ -188,9 +190,7 @@ async function parseDocumentContent(filePath, mimeType, filename) {
       mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       filename.endsWith('.docx')
     ) {
-      logger.info(`[parseDocumentContent] Processing Word document: ${filename}, buffer size: ${buffer?.length}`);
       const result = await mammoth.extractRawText({ buffer });
-      logger.info(`[parseDocumentContent] Word document extracted text length: ${result?.value?.length || 0}`);
       return result.value;
     }
 
@@ -524,16 +524,11 @@ class AgentClient extends BaseClient {
       const documentContents = [];
 
       for (const file of documentAttachments) {
-        if (!file.filepath) {
-          logger.warn(`[AgentClient] Document ${file.filename} has no filepath`);
-          continue;
-        }
+        if (!file.filepath) continue;
 
         // Build full URL for Firebase storage files
         const fileUrl = file.filepath.startsWith('http') ? file.filepath : `${baseUrl}${file.filepath}`;
-        logger.info(`[AgentClient] Parsing document: ${file.filename}, type: ${file.type}, URL: ${fileUrl}`);
         const content = await parseDocumentContent(fileUrl, file.type, file.filename);
-        logger.info(`[AgentClient] Document ${file.filename} content length: ${content?.length || 0}`);
         if (content) {
           // Limit content length to avoid token overflow (max ~50k chars per file)
           const maxLength = 50000;
