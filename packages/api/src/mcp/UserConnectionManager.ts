@@ -8,16 +8,36 @@ import { ConnectionsRepository } from '~/mcp/ConnectionsRepository';
 import { mcpConfig } from './mcpConfig';
 
 /**
+ * Generates a connection key for per-conversation isolation.
+ * Format: serverName:conversationId or serverName (if no conversationId)
+ */
+function getConnectionKey(serverName: string, conversationId?: string): string {
+  return conversationId ? `${serverName}:${conversationId}` : serverName;
+}
+
+/**
+ * Extracts the serverName from a connection key.
+ */
+function getServerNameFromKey(key: string): string {
+  const colonIndex = key.indexOf(':');
+  return colonIndex > -1 ? key.substring(0, colonIndex) : key;
+}
+
+/**
  * Abstract base class for managing user-specific MCP connections with lifecycle management.
  * Only meant to be extended by MCPManager.
  * Much of the logic was move here from the old MCPManager to make it more manageable.
  * User connections will soon be ephemeral and not cached anymore:
  * https://github.com/danny-avila/LibreChat/discussions/8790
+ *
+ * IMPORTANT: Connections are now keyed by serverName:conversationId for per-conversation
+ * session isolation. This prevents different conversations from interfering with each other's
+ * MCP sessions (especially important for browser automation).
  */
 export abstract class UserConnectionManager {
   // Connections shared by all users.
   public appConnections: ConnectionsRepository | null = null;
-  // Connections per userId -> serverName -> connection
+  // Connections per userId -> connectionKey (serverName:conversationId) -> connection
   protected userConnections: Map<string, Map<string, MCPConnection>> = new Map();
   /** Last activity timestamp for users (not per server) */
   protected userLastActivity: Map<string, number> = new Map();
@@ -31,7 +51,7 @@ export abstract class UserConnectionManager {
     );
   }
 
-  /** Gets or creates a connection for a specific user */
+  /** Gets or creates a connection for a specific user and conversation */
   public async getUserConnection({
     serverName,
     forceNew,
@@ -63,8 +83,13 @@ export abstract class UserConnectionManager {
 
     const config = await MCPServersRegistry.getInstance().getServerConfig(serverName, userId);
 
+    // Use conversationId for per-conversation connection isolation
+    const conversationId = requestBody?.conversationId;
+    const connectionKey = getConnectionKey(serverName, conversationId);
+    const logPrefix = `[MCP][User: ${userId}][${serverName}]${conversationId ? `[Conv: ${conversationId.slice(0, 8)}]` : ''}`;
+
     const userServerMap = this.userConnections.get(userId);
-    let connection = forceNew ? undefined : userServerMap?.get(serverName);
+    let connection = forceNew ? undefined : userServerMap?.get(connectionKey);
     const now = Date.now();
 
     // Check if user is idle
@@ -81,22 +106,18 @@ export abstract class UserConnectionManager {
     } else if (connection) {
       if (!config || (config.updatedAt && connection.isStale(config.updatedAt))) {
         if (config) {
-          logger.info(
-            `[MCP][User: ${userId}][${serverName}] Config was updated, disconnecting stale connection`,
-          );
+          logger.info(`${logPrefix} Config was updated, disconnecting stale connection`);
         }
-        await this.disconnectUserConnection(userId, serverName);
+        await this.disconnectUserConnectionByKey(userId, connectionKey);
         connection = undefined;
       } else if (await connection.isConnected()) {
-        logger.debug(`[MCP][User: ${userId}][${serverName}] Reusing active connection`);
+        logger.debug(`${logPrefix} Reusing active connection`);
         this.updateUserLastActivity(userId);
         return connection;
       } else {
         // Connection exists but is not connected, attempt to remove potentially stale entry
-        logger.warn(
-          `[MCP][User: ${userId}][${serverName}] Found existing but disconnected connection object. Cleaning up.`,
-        );
-        this.removeUserConnection(userId, serverName); // Clean up maps
+        logger.warn(`${logPrefix} Found existing but disconnected connection object. Cleaning up.`);
+        this.removeUserConnectionByKey(userId, connectionKey); // Clean up maps
         connection = undefined;
       }
     }
@@ -110,7 +131,7 @@ export abstract class UserConnectionManager {
     }
 
     // If no valid connection exists, create a new one
-    logger.info(`[MCP][User: ${userId}][${serverName}] Establishing new connection`);
+    logger.info(`${logPrefix} Establishing new connection`);
 
     try {
       connection = await MCPConnectionFactory.create(
@@ -140,23 +161,21 @@ export abstract class UserConnectionManager {
       if (!this.userConnections.has(userId)) {
         this.userConnections.set(userId, new Map());
       }
-      this.userConnections.get(userId)?.set(serverName, connection);
+      // Store with connectionKey (serverName:conversationId) for per-conversation isolation
+      this.userConnections.get(userId)?.set(connectionKey, connection);
 
-      logger.info(`[MCP][User: ${userId}][${serverName}] Connection successfully established`);
+      logger.info(`${logPrefix} Connection successfully established (key: ${connectionKey})`);
       // Update timestamp on creation
       this.updateUserLastActivity(userId);
       return connection;
     } catch (error) {
-      logger.error(`[MCP][User: ${userId}][${serverName}] Failed to establish connection`, error);
+      logger.error(`${logPrefix} Failed to establish connection`, error);
       // Ensure partial connection state is cleaned up if initialization fails
       await connection?.disconnect().catch((disconnectError) => {
-        logger.error(
-          `[MCP][User: ${userId}][${serverName}] Error during cleanup after failed connection`,
-          disconnectError,
-        );
+        logger.error(`${logPrefix} Error during cleanup after failed connection`, disconnectError);
       });
       // Ensure cleanup even if connection attempt fails
-      this.removeUserConnection(userId, serverName);
+      this.removeUserConnectionByKey(userId, connectionKey);
       throw error; // Re-throw the error to the caller
     }
   }
@@ -166,11 +185,11 @@ export abstract class UserConnectionManager {
     return this.userConnections.get(userId);
   }
 
-  /** Removes a specific user connection entry */
-  protected removeUserConnection(userId: string, serverName: string): void {
+  /** Removes a user connection entry by connectionKey (serverName:conversationId) */
+  protected removeUserConnectionByKey(userId: string, connectionKey: string): void {
     const userMap = this.userConnections.get(userId);
     if (userMap) {
-      userMap.delete(serverName);
+      userMap.delete(connectionKey);
       if (userMap.size === 0) {
         this.userConnections.delete(userId);
         // Only remove user activity timestamp if all connections are gone
@@ -178,17 +197,59 @@ export abstract class UserConnectionManager {
       }
     }
 
-    logger.debug(`[MCP][User: ${userId}][${serverName}] Removed connection entry.`);
+    logger.debug(`[MCP][User: ${userId}] Removed connection entry: ${connectionKey}`);
   }
 
-  /** Disconnects and removes a specific user connection */
+  /** Removes a specific user connection entry by serverName (legacy - removes all for that server) */
+  protected removeUserConnection(userId: string, serverName: string): void {
+    const userMap = this.userConnections.get(userId);
+    if (userMap) {
+      // Find and remove all connections for this serverName (any conversationId)
+      const keysToDelete = Array.from(userMap.keys()).filter(
+        (key) => getServerNameFromKey(key) === serverName,
+      );
+      for (const key of keysToDelete) {
+        userMap.delete(key);
+      }
+      if (userMap.size === 0) {
+        this.userConnections.delete(userId);
+        this.userLastActivity.delete(userId);
+      }
+    }
+
+    logger.debug(`[MCP][User: ${userId}][${serverName}] Removed all connection entries.`);
+  }
+
+  /** Disconnects and removes a user connection by connectionKey */
+  public async disconnectUserConnectionByKey(
+    userId: string,
+    connectionKey: string,
+  ): Promise<void> {
+    const userMap = this.userConnections.get(userId);
+    const connection = userMap?.get(connectionKey);
+    if (connection) {
+      logger.info(`[MCP][User: ${userId}] Disconnecting: ${connectionKey}`);
+      await connection.disconnect();
+      this.removeUserConnectionByKey(userId, connectionKey);
+    }
+  }
+
+  /** Disconnects and removes a specific user connection by serverName (legacy - disconnects all for that server) */
   public async disconnectUserConnection(userId: string, serverName: string): Promise<void> {
     const userMap = this.userConnections.get(userId);
-    const connection = userMap?.get(serverName);
-    if (connection) {
-      logger.info(`[MCP][User: ${userId}][${serverName}] Disconnecting...`);
-      await connection.disconnect();
-      this.removeUserConnection(userId, serverName);
+    if (userMap) {
+      // Find and disconnect all connections for this serverName (any conversationId)
+      const keysToDisconnect = Array.from(userMap.keys()).filter(
+        (key) => getServerNameFromKey(key) === serverName,
+      );
+      for (const key of keysToDisconnect) {
+        const connection = userMap.get(key);
+        if (connection) {
+          logger.info(`[MCP][User: ${userId}] Disconnecting: ${key}`);
+          await connection.disconnect();
+          this.removeUserConnectionByKey(userId, key);
+        }
+      }
     }
   }
 
@@ -197,15 +258,12 @@ export abstract class UserConnectionManager {
     const userMap = this.userConnections.get(userId);
     const disconnectPromises: Promise<void>[] = [];
     if (userMap) {
-      logger.info(`[MCP][User: ${userId}] Disconnecting all servers...`);
-      const userServers = Array.from(userMap.keys());
-      for (const serverName of userServers) {
+      logger.info(`[MCP][User: ${userId}] Disconnecting all connections...`);
+      const connectionKeys = Array.from(userMap.keys());
+      for (const connectionKey of connectionKeys) {
         disconnectPromises.push(
-          this.disconnectUserConnection(userId, serverName).catch((error) => {
-            logger.error(
-              `[MCP][User: ${userId}][${serverName}] Error during disconnection:`,
-              error,
-            );
+          this.disconnectUserConnectionByKey(userId, connectionKey).catch((error) => {
+            logger.error(`[MCP][User: ${userId}] Error disconnecting ${connectionKey}:`, error);
           }),
         );
       }

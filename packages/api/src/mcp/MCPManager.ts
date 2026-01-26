@@ -94,11 +94,17 @@ export class MCPManager extends UserConnectionManager {
       if (!userConnections || userConnections.size === 0) {
         return null;
       }
-      if (!userConnections.has(serverName)) {
-        return null;
+
+      // Find any connection for this serverName (connections are keyed by serverName:conversationId)
+      for (const [key, connection] of userConnections.entries()) {
+        // Key format is either "serverName" or "serverName:conversationId"
+        const keyServerName = key.includes(':') ? key.substring(0, key.indexOf(':')) : key;
+        if (keyServerName === serverName) {
+          return MCPServerInspector.getToolFunctions(serverName, connection);
+        }
       }
 
-      return MCPServerInspector.getToolFunctions(serverName, userConnections.get(serverName)!);
+      return null;
     } catch (error) {
       logger.warn(
         `[getServerToolFunctions] Error getting tool functions for server ${serverName}`,
@@ -209,36 +215,9 @@ Please follow these instructions when using tools from the respective MCP server
         requestBody,
       });
 
-      /**
-       * Check if this connection was established for a different conversation.
-       * Browser MCP servers need per-conversation session isolation to prevent
-       * different conversations from sharing the same browser session.
-       */
-      if (connection.needsReconnectForConversation(conversationId)) {
-        logger.info(
-          `${logPrefix} Connection was for conversation ${connection.getSessionConversationId()}, ` +
-            `but current conversation is ${conversationId}. Forcing reconnection for session isolation.`,
-        );
-        await connection.disconnect();
-        connection = await this.getConnection({
-          serverName,
-          user,
-          flowManager,
-          tokenMethods,
-          oauthStart,
-          oauthEnd,
-          signal: options?.signal,
-          customUserVars,
-          requestBody,
-          forceNew: true,
-        });
-      }
-
-      // Track the conversationId for this connection's session
-      if (conversationId && !connection.getSessionConversationId()) {
-        connection.setSessionConversationId(conversationId);
-        logger.debug(`${logPrefix} Associated connection with conversation ${conversationId}`);
-      }
+      // Note: Per-conversation session isolation is now handled in getUserConnection()
+      // by keying connections with serverName:conversationId instead of just serverName.
+      // This eliminates the need for forced reconnection and prevents tool call interruption.
 
       if (!(await connection.isConnected())) {
         /** May happen if getUserConnection failed silently or app connection dropped */
