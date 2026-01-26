@@ -37,16 +37,15 @@ export function BrowserThumbnail({ resource, isActive, onClick, conversationId, 
     return '';
   }, [resource]);
 
-  // Extract domain for display - prefer browsedUrl (actual website) over iframeUrl (browserbase)
+  // Extract domain for display - only use browsedUrl (actual website), never show browserbase.com
   const domain = React.useMemo(() => {
-    const displayUrl = browsedUrl || iframeUrl;
-    if (!displayUrl) return 'Loading...';
+    if (!browsedUrl) return 'Loading...';
     try {
-      return new URL(displayUrl).hostname;
+      return new URL(browsedUrl).hostname;
     } catch {
-      return displayUrl;
+      return browsedUrl;
     }
-  }, [browsedUrl, iframeUrl]);
+  }, [browsedUrl]);
 
   return (
     <div
