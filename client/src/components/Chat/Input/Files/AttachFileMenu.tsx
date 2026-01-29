@@ -107,13 +107,13 @@ const AttachFileMenu = ({
     }
     inputRef.current.value = '';
     if (fileType === 'image') {
-      inputRef.current.accept = 'image/*';
+      inputRef.current.accept = 'image/*,.heif,.heic';
     } else if (fileType === 'document') {
       inputRef.current.accept = documentMimeTypes;
     } else if (fileType === 'image_document') {
-      inputRef.current.accept = `image/*,${documentMimeTypes}`;
+      inputRef.current.accept = `image/*,.heif,.heic,${documentMimeTypes}`;
     } else if (fileType === 'image_document_video_audio') {
-      inputRef.current.accept = `image/*,${documentMimeTypes},video/*,audio/*`;
+      inputRef.current.accept = `image/*,.heif,.heic,${documentMimeTypes},video/*,audio/*`;
     } else {
       inputRef.current.accept = '';
     }
@@ -247,7 +247,7 @@ const AttachFileMenu = ({
           id="attach-file-menu-button"
           aria-label="Attach File Options"
           className={cn(
-            'flex size-9 items-center justify-center rounded-full p-1 transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
+            'flex size-9 items-center justify-center rounded-full p-1 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-opacity-50',
             isPopoverActive && 'bg-surface-hover',
           )}
         >

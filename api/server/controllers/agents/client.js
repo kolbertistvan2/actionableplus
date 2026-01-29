@@ -1,6 +1,5 @@
 require('events').EventEmitter.defaultMaxListeners = 100;
 const { logger } = require('@librechat/data-schemas');
-const { DynamicStructuredTool } = require('@langchain/core/tools');
 const { getBufferString, HumanMessage } = require('@langchain/core/messages');
 const {
   createRun,
@@ -14,6 +13,7 @@ const {
   getBalanceConfig,
   getProviderConfig,
   memoryInstructions,
+  applyContextToAgent,
   GenerationJobManager,
   getTransactionsConfig,
   createMemoryProcessor,
@@ -279,10 +279,40 @@ function logToolError(graph, error, toolId) {
 const AGENT_SUFFIX_PATTERN = /____(\d+)$/;
 
 /**
+ * Finds the primary agent ID within a set of agent IDs.
+ * Primary = no suffix (____N) or lowest suffix number.
+ * @param {Set<string>} agentIds
+ * @returns {string | null}
+ */
+function findPrimaryAgentId(agentIds) {
+  let primaryAgentId = null;
+  let lowestSuffixIndex = Infinity;
+
+  for (const agentId of agentIds) {
+    const suffixMatch = agentId.match(AGENT_SUFFIX_PATTERN);
+    if (!suffixMatch) {
+      return agentId;
+    }
+    const suffixIndex = parseInt(suffixMatch[1], 10);
+    if (suffixIndex < lowestSuffixIndex) {
+      lowestSuffixIndex = suffixIndex;
+      primaryAgentId = agentId;
+    }
+  }
+
+  return primaryAgentId;
+}
+
+/**
  * Creates a mapMethod for getMessagesForConversation that processes agent content.
  * - Strips agentId/groupId metadata from all content
- * - For multi-agent: filters to primary agent content only (no suffix or lowest suffix)
+ * - For parallel agents (addedConvo with groupId): filters each group to its primary agent
+ * - For handoffs (agentId without groupId): keeps all content from all agents
  * - For multi-agent: applies agent labels to content
+ *
+ * The key distinction:
+ * - Parallel execution (addedConvo): Parts have both agentId AND groupId
+ * - Handoffs: Parts only have agentId, no groupId
  *
  * @param {Agent} primaryAgent - Primary agent configuration
  * @param {Map<string, Agent>} [agentConfigs] - Additional agent configurations
@@ -307,40 +337,38 @@ function createMultiAgentMapper(primaryAgent, agentConfigs) {
       return message;
     }
 
-    // Find primary agent ID (no suffix, or lowest suffix number) - only needed for multi-agent
-    let primaryAgentId = null;
-    let hasAgentMetadata = false;
-
-    if (hasMultipleAgents) {
-      let lowestSuffixIndex = Infinity;
-      for (const part of message.content) {
-        const agentId = part?.agentId;
-        if (!agentId) {
-          continue;
-        }
-        hasAgentMetadata = true;
-
-        const suffixMatch = agentId.match(AGENT_SUFFIX_PATTERN);
-        if (!suffixMatch) {
-          primaryAgentId = agentId;
-          break;
-        }
-        const suffixIndex = parseInt(suffixMatch[1], 10);
-        if (suffixIndex < lowestSuffixIndex) {
-          lowestSuffixIndex = suffixIndex;
-          primaryAgentId = agentId;
-        }
-      }
-    } else {
-      // Single agent: just check if any metadata exists
-      hasAgentMetadata = message.content.some((part) => part?.agentId || part?.groupId);
-    }
-
+    // Check for metadata
+    const hasAgentMetadata = message.content.some((part) => part?.agentId || part?.groupId != null);
     if (!hasAgentMetadata) {
       return message;
     }
 
     try {
+      // Build a map of groupId -> Set of agentIds, to find primary per group
+      /** @type {Map<number, Set<string>>} */
+      const groupAgentMap = new Map();
+
+      for (const part of message.content) {
+        const groupId = part?.groupId;
+        const agentId = part?.agentId;
+        if (groupId != null && agentId) {
+          if (!groupAgentMap.has(groupId)) {
+            groupAgentMap.set(groupId, new Set());
+          }
+          groupAgentMap.get(groupId).add(agentId);
+        }
+      }
+
+      // For each group, find the primary agent
+      /** @type {Map<number, string>} */
+      const groupPrimaryMap = new Map();
+      for (const [groupId, agentIds] of groupAgentMap) {
+        const primary = findPrimaryAgentId(agentIds);
+        if (primary) {
+          groupPrimaryMap.set(groupId, primary);
+        }
+      }
+
       /** @type {Array<TMessageContentParts>} */
       const filteredContent = [];
       /** @type {Record<number, string>} */
@@ -348,8 +376,16 @@ function createMultiAgentMapper(primaryAgent, agentConfigs) {
 
       for (const part of message.content) {
         const agentId = part?.agentId;
-        // For single agent: include all parts; for multi-agent: filter to primary
-        if (!hasMultipleAgents || !agentId || agentId === primaryAgentId) {
+        const groupId = part?.groupId;
+
+        // Filtering logic:
+        // - No groupId (handoffs): always include
+        // - Has groupId (parallel): only include if it's the primary for that group
+        const isParallelPart = groupId != null;
+        const groupPrimary = isParallelPart ? groupPrimaryMap.get(groupId) : null;
+        const shouldInclude = !isParallelPart || !agentId || agentId === groupPrimary;
+
+        if (shouldInclude) {
           const newIndex = filteredContent.length;
           const { agentId: _a, groupId: _g, ...cleanPart } = part;
           filteredContent.push(cleanPart);
@@ -430,9 +466,7 @@ class AgentClient extends BaseClient {
     return this.contentParts;
   }
 
-  setOptions(options) {
-    logger.info('[api/server/controllers/agents/client.js] setOptions', options);
-  }
+  setOptions(_options) {}
 
   /**
    * `AgentClient` is not opinionated about vision requests, so we don't do anything here
@@ -474,11 +508,13 @@ class AgentClient extends BaseClient {
     );
   }
 
+  /**
+   * Returns build message options. For AgentClient, agent-specific instructions
+   * are retrieved directly from agent objects in buildMessages, so this returns empty.
+   * @returns {Object} Empty options object
+   */
   getBuildMessagesOptions() {
-    return {
-      instructions: this.options.agent.instructions,
-      additional_instructions: this.options.agent.additional_instructions,
-    };
+    return {};
   }
 
   /**
@@ -662,28 +698,43 @@ class AgentClient extends BaseClient {
     return result;
   }
 
-  async buildMessages(
-    messages,
-    parentMessageId,
-    { instructions = null, additional_instructions = null },
-    opts,
-  ) {
+  async buildMessages(messages, parentMessageId, _buildOptions, opts) {
+    /** Always pass mapMethod; getMessagesForConversation applies it only to messages with addedConvo flag */
     const orderedMessages = this.constructor.getMessagesForConversation({
       messages,
       parentMessageId,
       summary: this.shouldSummarize,
       mapMethod: createMultiAgentMapper(this.options.agent, this.agentConfigs),
+      mapCondition: (message) => message.addedConvo === true,
     });
 
     let payload;
     /** @type {number | undefined} */
     let promptTokens;
 
-    /** @type {string} */
-    let systemContent = [instructions ?? '', additional_instructions ?? '']
-      .filter(Boolean)
-      .join('\n')
-      .trim();
+    /**
+     * Extract base instructions for all agents (combines instructions + additional_instructions).
+     * This must be done before applying context to preserve the original agent configuration.
+     */
+    const extractBaseInstructions = (agent) => {
+      const baseInstructions = [agent.instructions ?? '', agent.additional_instructions ?? '']
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+      agent.instructions = baseInstructions;
+      return agent;
+    };
+
+    /** Collect all agents for unified processing, extracting base instructions during collection */
+    const allAgents = [
+      { agent: extractBaseInstructions(this.options.agent), agentId: this.options.agent.id },
+      ...(this.agentConfigs?.size > 0
+        ? Array.from(this.agentConfigs.entries()).map(([agentId, agent]) => ({
+            agent: extractBaseInstructions(agent),
+            agentId,
+          }))
+        : []),
+    ];
 
     if (this.options.attachments) {
       const attachments = await this.options.attachments;
@@ -718,6 +769,7 @@ class AgentClient extends BaseClient {
         assistantName: this.options?.modelLabel,
       });
 
+      /** For non-latest messages, prepend file context directly to message content */
       if (message.fileContext && i !== orderedMessages.length - 1) {
         if (typeof formattedMessage.content === 'string') {
           formattedMessage.content = message.fileContext + '\n' + formattedMessage.content;
@@ -727,8 +779,6 @@ class AgentClient extends BaseClient {
             ? (textPart.text = message.fileContext + '\n' + textPart.text)
             : formattedMessage.content.unshift({ type: 'text', text: message.fileContext });
         }
-      } else if (message.fileContext && i === orderedMessages.length - 1) {
-        systemContent = [systemContent, message.fileContext].join('\n');
       }
 
       const needsTokenCount =
@@ -761,52 +811,44 @@ class AgentClient extends BaseClient {
       return formattedMessage;
     });
 
+    /**
+     * Build shared run context - applies to ALL agents in the run.
+     * This includes: file context (latest message), augmented prompt (RAG), memory context.
+     */
+    const sharedRunContextParts = [];
+
+    /** File context from the latest message (attachments) */
+    const latestMessage = orderedMessages[orderedMessages.length - 1];
+    if (latestMessage?.fileContext) {
+      sharedRunContextParts.push(latestMessage.fileContext);
+    }
+
+    /** Augmented prompt from RAG/context handlers */
     if (this.contextHandlers) {
       this.augmentedPrompt = await this.contextHandlers.createContext();
-      systemContent = this.augmentedPrompt + systemContent;
-    }
-
-    // Inject MCP server instructions if available
-    const ephemeralAgent = this.options.req.body.ephemeralAgent;
-    let mcpServers = [];
-
-    // Check for ephemeral agent MCP servers
-    if (ephemeralAgent && ephemeralAgent.mcp && ephemeralAgent.mcp.length > 0) {
-      mcpServers = ephemeralAgent.mcp;
-    }
-    // Check for regular agent MCP tools
-    else if (this.options.agent && this.options.agent.tools) {
-      mcpServers = this.options.agent.tools
-        .filter(
-          (tool) =>
-            tool instanceof DynamicStructuredTool && tool.name.includes(Constants.mcp_delimiter),
-        )
-        .map((tool) => tool.name.split(Constants.mcp_delimiter).pop())
-        .filter(Boolean);
-    }
-
-    if (mcpServers.length > 0) {
-      try {
-        const mcpInstructions = await getMCPManager().formatInstructionsForContext(mcpServers);
-        if (mcpInstructions) {
-          systemContent = [systemContent, mcpInstructions].filter(Boolean).join('\n\n');
-          logger.debug('[AgentClient] Injected MCP instructions for servers:', mcpServers);
-        }
-        // Add global browser agent instructions for MCP tool agents
-        systemContent = [browserAgentInstructions, systemContent].filter(Boolean).join('\n\n');
-        logger.debug('[AgentClient] Injected browser agent instructions');
-
-        // Add global image tool instructions for agents with edit_image/analyze_image
-        systemContent = [imageToolInstructions, systemContent].filter(Boolean).join('\n\n');
-        logger.debug('[AgentClient] Injected image tool instructions');
-      } catch (error) {
-        logger.error('[AgentClient] Failed to inject MCP instructions:', error);
+      if (this.augmentedPrompt) {
+        sharedRunContextParts.push(this.augmentedPrompt);
       }
     }
 
-    if (systemContent) {
-      this.options.agent.instructions = systemContent;
+    /** Add custom global instructions for MCP tool agents */
+    // Browser agent instructions (explain before executing browser tools)
+    if (browserAgentInstructions) {
+      sharedRunContextParts.push(browserAgentInstructions);
     }
+    // Image tool instructions (using public URLs for edit_image/analyze_image)
+    if (imageToolInstructions) {
+      sharedRunContextParts.push(imageToolInstructions);
+    }
+
+    /** Memory context (user preferences/memories) */
+    const withoutKeys = await this.useMemory();
+    if (withoutKeys) {
+      const memoryContext = `${memoryInstructions}\n\n# Existing memory about the user:\n${withoutKeys}`;
+      sharedRunContextParts.push(memoryContext);
+    }
+
+    const sharedRunContext = sharedRunContextParts.join('\n\n');
 
     /** @type {Record<string, number> | undefined} */
     let tokenCountMap;
@@ -833,14 +875,27 @@ class AgentClient extends BaseClient {
       opts.getReqData({ promptTokens });
     }
 
-    const withoutKeys = await this.useMemory();
-    if (withoutKeys) {
-      systemContent += `${memoryInstructions}\n\n# Existing memory about the user:\n${withoutKeys}`;
-    }
-
-    if (systemContent) {
-      this.options.agent.instructions = systemContent;
-    }
+    /**
+     * Apply context to all agents.
+     * Each agent gets: shared run context + their own base instructions + their own MCP instructions.
+     *
+     * NOTE: This intentionally mutates agent objects in place. The agentConfigs Map
+     * holds references to config objects that will be passed to the graph runtime.
+     */
+    const ephemeralAgent = this.options.req.body.ephemeralAgent;
+    const mcpManager = getMCPManager();
+    await Promise.all(
+      allAgents.map(({ agent, agentId }) =>
+        applyContextToAgent({
+          agent,
+          agentId,
+          logger,
+          mcpManager,
+          sharedRunContext,
+          ephemeralAgent: agentId === this.options.agent.id ? ephemeralAgent : undefined,
+        }),
+      ),
+    );
 
     return result;
   }
@@ -912,6 +967,8 @@ class AgentClient extends BaseClient {
           agent_id: memoryConfig.agent.id,
           endpoint: EModelEndpoint.agents,
         });
+      } else if (memoryConfig.agent?.id != null) {
+        prelimAgent = this.options.agent;
       } else if (
         memoryConfig.agent?.id == null &&
         memoryConfig.agent?.model != null &&
@@ -924,6 +981,10 @@ class AgentClient extends BaseClient {
         '[api/server/controllers/agents/client.js #useMemory] Error loading agent for memory',
         error,
       );
+    }
+
+    if (!prelimAgent) {
+      return;
     }
 
     const agent = await initializeAgent(
@@ -988,6 +1049,7 @@ class AgentClient extends BaseClient {
         getFormattedMemories: db.getFormattedMemories,
       },
       res: this.options.res,
+      user: createSafeUser(this.options.req.user),
     });
 
     this.processMemory = processMemory;
@@ -1095,21 +1157,37 @@ class AgentClient extends BaseClient {
     if (!collectedUsage || !collectedUsage.length) {
       return;
     }
+    // Use first entry's input_tokens as the base input (represents initial user message context)
+    // Support both OpenAI format (input_token_details) and Anthropic format (cache_*_input_tokens)
+    const firstUsage = collectedUsage[0];
     const input_tokens =
-      (collectedUsage[0]?.input_tokens || 0) +
-      (Number(collectedUsage[0]?.input_token_details?.cache_creation) || 0) +
-      (Number(collectedUsage[0]?.input_token_details?.cache_read) || 0);
+      (firstUsage?.input_tokens || 0) +
+      (Number(firstUsage?.input_token_details?.cache_creation) ||
+        Number(firstUsage?.cache_creation_input_tokens) ||
+        0) +
+      (Number(firstUsage?.input_token_details?.cache_read) ||
+        Number(firstUsage?.cache_read_input_tokens) ||
+        0);
 
-    let output_tokens = 0;
-    let previousTokens = input_tokens; // Start with original input
-    for (let i = 0; i < collectedUsage.length; i++) {
-      const usage = collectedUsage[i];
+    // Sum output_tokens directly from all entries - works for both sequential and parallel execution
+    // This avoids the incremental calculation that produced negative values for parallel agents
+    let total_output_tokens = 0;
+
+    for (const usage of collectedUsage) {
       if (!usage) {
         continue;
       }
 
-      const cache_creation = Number(usage.input_token_details?.cache_creation) || 0;
-      const cache_read = Number(usage.input_token_details?.cache_read) || 0;
+      // Support both OpenAI format (input_token_details) and Anthropic format (cache_*_input_tokens)
+      const cache_creation =
+        Number(usage.input_token_details?.cache_creation) ||
+        Number(usage.cache_creation_input_tokens) ||
+        0;
+      const cache_read =
+        Number(usage.input_token_details?.cache_read) || Number(usage.cache_read_input_tokens) || 0;
+
+      // Accumulate output tokens for the usage summary
+      total_output_tokens += Number(usage.output_tokens) || 0;
 
       const txMetadata = {
         context,
@@ -1120,18 +1198,6 @@ class AgentClient extends BaseClient {
         endpointTokenConfig: this.options.endpointTokenConfig,
         model: usage.model ?? model ?? this.model ?? this.options.agent.model_parameters.model,
       };
-
-      if (i > 0) {
-        // Count new tokens generated (input_tokens minus previous accumulated tokens)
-        output_tokens +=
-          (Number(usage.input_tokens) || 0) + cache_creation + cache_read - previousTokens;
-      }
-
-      // Add this message's output tokens
-      output_tokens += Number(usage.output_tokens) || 0;
-
-      // Update previousTokens to include this message's output
-      previousTokens += Number(usage.output_tokens) || 0;
 
       if (cache_creation > 0 || cache_read > 0) {
         spendStructuredTokens(txMetadata, {
@@ -1162,7 +1228,7 @@ class AgentClient extends BaseClient {
 
     this.usage = {
       input_tokens,
-      output_tokens,
+      output_tokens: total_output_tokens,
     };
   }
 
@@ -1391,11 +1457,20 @@ class AgentClient extends BaseClient {
           this.artifactPromises.push(...attachments);
         }
 
-        await this.recordCollectedUsage({
-          context: 'message',
-          balance: balanceConfig,
-          transactions: transactionsConfig,
-        });
+        /** Skip token spending if aborted - the abort handler (abortMiddleware.js) handles it
+        This prevents double-spending when user aborts via `/api/agents/chat/abort` */
+        const wasAborted = abortController?.signal?.aborted;
+        if (!wasAborted) {
+          await this.recordCollectedUsage({
+            context: 'message',
+            balance: balanceConfig,
+            transactions: transactionsConfig,
+          });
+        } else {
+          logger.debug(
+            '[api/server/controllers/agents/client.js #chatCompletion] Skipping token spending - handled by abort middleware',
+          );
+        }
       } catch (err) {
         logger.error(
           '[api/server/controllers/agents/client.js #chatCompletion] Error in cleanup phase',
@@ -1420,6 +1495,14 @@ class AgentClient extends BaseClient {
     }
     const { handleLLMEnd, collected: collectedMetadata } = createMetadataAggregator();
     const { req, agent } = this.options;
+
+    if (req?.body?.isTemporary) {
+      logger.debug(
+        `[api/server/controllers/agents/client.js #titleConvo] Skipping title generation for temporary conversation`,
+      );
+      return;
+    }
+
     const appConfig = req.config;
     let endpoint = agent.endpoint;
 

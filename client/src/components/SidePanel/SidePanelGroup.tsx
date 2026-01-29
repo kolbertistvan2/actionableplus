@@ -9,7 +9,7 @@ import { BrowserSidePanel } from '~/components/BrowserPreview';
 import { activeUIResourceFamily, browserSidePanelOpenFamily } from '~/store';
 import { useGetStartupConfig } from '~/data-provider';
 import ArtifactsPanel from './ArtifactsPanel';
-import { normalizeLayout } from '~/utils';
+import { normalizeLayout, cn } from '~/utils';
 import SidePanel from './SidePanel';
 import store from '~/store';
 
@@ -170,9 +170,9 @@ const SidePanelGroup = memo(
         )}
         {!hideSidePanel && interfaceConfig.sidePanel === true && (
           <button
-            aria-label="Close right side panel"
-            className={`nav-mask ${!isCollapsed ? 'active' : ''}`}
             onClick={handleClosePanel}
+            aria-label="Close right side panel"
+            className={cn('sidenav-mask', !isCollapsed ? 'active' : '')}
           />
         )}
 
