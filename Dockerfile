@@ -46,7 +46,7 @@ RUN \
     npm config set fetch-retry-maxtimeout 600000 ; \
     npm config set fetch-retries 5 ; \
     npm config set fetch-retry-mintimeout 15000 ; \
-    npm install --no-audit
+    npm install --no-audit --legacy-peer-deps
 
 COPY --chown=node:node . .
 
