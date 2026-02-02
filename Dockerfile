@@ -31,7 +31,6 @@ WORKDIR /app
 USER node
 
 COPY --chown=node:node package.json ./
-# Note: package-lock.json intentionally not copied - npm install generates it
 COPY --chown=node:node api/package.json ./api/package.json
 COPY --chown=node:node client/package.json ./client/package.json
 COPY --chown=node:node packages/data-provider/package.json ./packages/data-provider/package.json
