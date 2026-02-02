@@ -30,7 +30,8 @@ WORKDIR /app
 
 USER node
 
-COPY --chown=node:node package.json package-lock.json ./
+COPY --chown=node:node package.json ./
+# Note: package-lock.json intentionally not copied - npm install generates it
 COPY --chown=node:node api/package.json ./api/package.json
 COPY --chown=node:node client/package.json ./client/package.json
 COPY --chown=node:node packages/data-provider/package.json ./packages/data-provider/package.json
@@ -45,7 +46,7 @@ RUN \
     npm config set fetch-retry-maxtimeout 600000 ; \
     npm config set fetch-retries 5 ; \
     npm config set fetch-retry-mintimeout 15000 ; \
-    npm ci --no-audit
+    npm install --no-audit
 
 COPY --chown=node:node . .
 
