@@ -28,6 +28,8 @@ modelSpecs:
     - anthropic
     - openAI
     - Perplexity
+    - DeepSeek
+    - Kimi
   list:
     - name: ecommerce-consultant
       label: AI Consultant
@@ -69,6 +71,47 @@ endpoints:
       dropParams: ["stop", "frequency_penalty", "presence_penalty", "user"]
       modelDisplayLabel: "Perplexity"
       iconURL: "https://www.perplexity.ai/favicon.ico"
+
+    # DeepSeek API - Cost-effective reasoning models
+    # V3.2: 671B MoE architecture, 37B active params/token
+    # Pricing: ~$0.55/M input, $2.19/M output
+    - name: "DeepSeek"
+      apiKey: "${DEEPSEEK_API_KEY}"
+      baseURL: "https://api.deepseek.com/v1/"
+      models:
+        default:
+          - "deepseek-chat"        # Non-thinking mode (fast)
+          - "deepseek-reasoner"    # Thinking mode (CoT reasoning)
+        fetch: false
+      titleConvo: true
+      titleModel: "deepseek-chat"
+      summarize: true
+      summaryModel: "deepseek-chat"
+      forcePrompt: false
+      dropParams: ["user"]
+      modelDisplayLabel: "DeepSeek"
+      iconURL: "https://www.deepseek.com/favicon.ico"
+
+    # Kimi K2.5 (Moonshot AI) - Visual agentic intelligence
+    # 256k context, agent swarm (up to 100 sub-agents)
+    # Pricing: $0.60/M input, $3.00/M output
+    - name: "Kimi"
+      apiKey: "${MOONSHOT_API_KEY}"
+      baseURL: "https://api.moonshot.cn/v1/"
+      models:
+        default:
+          - "kimi-k2.5"            # Latest visual agentic model
+          - "moonshot-v1-128k"     # Previous gen, 128k context
+          - "moonshot-v1-32k"      # Faster, 32k context
+        fetch: false
+      titleConvo: true
+      titleModel: "moonshot-v1-32k"
+      summarize: true
+      summaryModel: "moonshot-v1-32k"
+      forcePrompt: false
+      dropParams: ["user"]
+      modelDisplayLabel: "Kimi"
+      iconURL: "https://www.kimi.com/favicon.ico"
 
 # Token Balance System - DISABLED
 # balance:
