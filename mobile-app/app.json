@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "Actionable+",
+    "slug": "actionableplus",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "actionableplus",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10a37f"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.actionableplus.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to quickly access your chats",
+        "NSCameraUsageDescription": "Take photos to share in chat",
+        "NSPhotoLibraryUsageDescription": "Select photos to share in chat",
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.1081421927956-hti0r4oq9gafa2dqkn465s4f2fflhc4q"
+            ]
+          }
+        ]
+      },
+      "associatedDomains": [
+        "applinks:app.actionableplus.com"
+      ]
+    },
+    "android": {
+      "package": "com.actionableplus.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#10a37f"
+      },
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.actionableplus.com",
+              "pathPrefix": "/c/"
+            },
+            {
+              "scheme": "actionableplus"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-font",
+      "expo-local-authentication",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#10a37f",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://app.actionableplus.com",
+      "eas": {
+        "projectId": "587dca12-69fc-4107-8496-4a3c606ec991"
+      }
+    },
+    "owner": "kolbertistvan"
+  }
+}
