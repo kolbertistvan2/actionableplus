@@ -1,0 +1,33 @@
+# Exclude parent project files from EAS Build
+# This ensures clean, fast mobile-only builds
+
+# Parent project directories
+../client/
+../api/
+../packages/
+../data-node/
+../images/
+../uploads/
+
+# Parent config files
+../*.md
+../*.json
+../*.yaml
+../*.yml
+../*.toml
+../.env*
+../.docker*
+../Dockerfile*
+
+# Development files
+*.log
+.DS_Store
+.git/
+.github/
+
+# Test files (exclude from production builds)
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
