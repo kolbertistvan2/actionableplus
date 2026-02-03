@@ -8,6 +8,8 @@ Ez a mappa tartalmazza az Actionable+ alkalmazás AI agent-jeinek konfiguráció
 |-------|--------|---------|
 | [E-Commerce Consultant](ecommerce-consultant.md) | Univerzális e-commerce tanácsadó | Active |
 | [Web Researcher](web-researcher.md) | Browser automation specialist (Stagehand MCP) | Active |
+| [Mobile App Developer](mobile-app-developer.md) | React Native + Expo mobile app specialist | Active |
+| [Desktop App Developer](desktop-app-developer.md) | Tauri desktop app specialist | Active |
 
 ## Agent Chain Architektúra
 
