@@ -3092,33 +3092,32 @@ export const CHART_COLORS_SOLID = [
   "#f59e0b",  // Amber
 ]
 
-// Shared chart configuration - professional consulting style
-// Inspired by PwC/McKinsey consulting dashboards
+// Shared chart configuration - McKinsey/PwC professional consulting style
+// ALWAYS light background, clean typography, no decorative elements
 const chartConfig = {
   style: {
     fontFamily: "Inter, system-ui, -apple-system, sans-serif",
     fontSize: 12,
   },
   axis: {
-    stroke: "#E5E7EB",      // Subtle axis lines
+    stroke: "#D1D5DB",
     tickLine: false,
-    axisLine: { stroke: "#E5E7EB" },
+    axisLine: { stroke: "#D1D5DB" },
     tick: { fill: "#6B7280", fontSize: 11 },
   },
   grid: {
     stroke: "#E5E7EB",
-    strokeDasharray: "3 3",  // Dashed grid for elegant look
-    vertical: false,         // Horizontal lines only - cleaner
+    strokeDasharray: "3 3",
+    vertical: false,
   },
   tooltip: {
     contentStyle: {
       backgroundColor: "rgba(255, 255, 255, 0.98)",
-      border: "1px solid #D1D5DB",
+      border: "1px solid #E5E7EB",
       borderRadius: 8,
-      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+      boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
       padding: "12px 16px",
       fontFamily: "Inter, system-ui, sans-serif",
-      backdropFilter: "blur(8px)",
     },
     labelStyle: {
       color: "#111827",
