@@ -1136,37 +1136,50 @@ titleModel: "claude-haiku-4-5-20251001"   # Fast & cheap model
 
 **Miért Anthropic?** A Haiku gyors és olcsó, minden custom endpoint így konzisztens címeket kap.
 
-## Current Date Injection (All Models)
+## Platform-Level Instructions (All Models)
 
-Minden modell (agent és sima model is) tudja a jelenlegi dátumot a system prompt-ban.
+Minden modell (agent és sima model is) kap platform-szintű instrukciókat a system prompt-ban.
+
+### Injektált tartalom
+
+1. **Aktuális dátum** - A modell tudja a mai dátumot
+2. **Response Guidelines** - Rövid bevezető válasz mielőtt nekilát a feladatnak (hasonló az agentekhez)
 
 ### Implementáció
 
-**Fájl:** `api/app/clients/BaseClient.js` (312-349. sor)
+**Fájl:** `api/app/clients/BaseClient.js` (317-335. sor)
 
 ```javascript
-addInstructions(messages, instructions, beforeLast = false) {
-  if (!instructions || Object.keys(instructions).length === 0) {
-    return messages;
-  }
+// === ACTIONABLEPLUS: Add current date and response behavior to all instructions ===
+const currentDate = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+const actionableplusInstructions = `Current date: ${currentDate}
 
-  // === ACTIONABLEPLUS: Add current date to all instructions ===
-  // To disable: remove this block (lines until "=== END ACTIONABLEPLUS ===")
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  const instructionsWithDate = {
-    ...instructions,
-    content: `Current date: ${currentDate}\n\n${instructions.content || ''}`,
-  };
-  // === END ACTIONABLEPLUS ===
+## Response Guidelines
 
-  // ... rest of method uses instructionsWithDate
-}
+**Always start your response with a brief acknowledgment (1-2 sentences)** explaining what you will do before proceeding with the actual task.
+
+Example:
+User: "Write a function to calculate factorial"
+You: "I'll create a factorial function for you using recursion with proper edge case handling."
+[Then proceed with the code]`;
+
+const instructionsWithDate = {
+  ...instructions,
+  content: `${actionableplusInstructions}\n\n${instructions.content || ''}`,
+};
+// === END ACTIONABLEPLUS ===
 ```
+
+### Miért?
+
+- **Azonnali feedback** - User látja, hogy a modell érti a kérést
+- **Cím generálás** - A válasz eleje alapján azonnal generálódik a chat cím
+- **Cross-device sync** - A beszélgetés állapota azonnal mentődik
 
 ### Visszavonás
 

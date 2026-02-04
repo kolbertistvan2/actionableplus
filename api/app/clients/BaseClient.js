@@ -314,7 +314,7 @@ class BaseClient {
       return messages;
     }
 
-    // === ACTIONABLEPLUS: Add current date to all instructions ===
+    // === ACTIONABLEPLUS: Add current date and response behavior to all instructions ===
     // To disable: remove this block (lines until "=== END ACTIONABLEPLUS ===")
     const currentDate = new Date().toLocaleDateString('en-US', {
       weekday: 'long',
@@ -322,9 +322,20 @@ class BaseClient {
       month: 'long',
       day: 'numeric',
     });
+    const actionableplusInstructions = `Current date: ${currentDate}
+
+## Response Guidelines
+
+**Always start your response with a brief acknowledgment (1-2 sentences)** explaining what you will do before proceeding with the actual task. This helps the user understand your approach immediately and provides instant feedback.
+
+Example:
+User: "Write a function to calculate factorial"
+You: "I'll create a factorial function for you using recursion with proper edge case handling."
+[Then proceed with the code]`;
+
     const instructionsWithDate = {
       ...instructions,
-      content: `Current date: ${currentDate}\n\n${instructions.content || ''}`,
+      content: `${actionableplusInstructions}\n\n${instructions.content || ''}`,
     };
     // === END ACTIONABLEPLUS ===
 
