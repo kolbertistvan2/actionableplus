@@ -1050,6 +1050,152 @@ A funkció 31 nyelvre le van fordítva (EN, HU, DE, stb.):
 | `client/src/components/SidePanel/Agents/AgentPanel.tsx` | Payload extraction |
 | `client/src/locales/*/translation.json` | Lokalizációs fájlok (31 nyelv) |
 
+## Custom Endpoints (OpenRouter, DeepSeek, Perplexity)
+
+A `librechat.yaml` fájlban konfigurált egyedi API endpointok.
+
+### OpenRouter
+
+200+ AI modell egyetlen API-n keresztül. Auto-discovery támogatás (`fetch: true`).
+
+**librechat.yaml konfig:**
+```yaml
+- name: "OpenRouter"
+  apiKey: "${OPENROUTER_API_KEY}"
+  baseURL: "https://openrouter.ai/api/v1/"
+  models:
+    default:
+      - "anthropic/claude-sonnet-4"
+      - "anthropic/claude-opus-4"
+      - "google/gemini-2.5-pro-preview"
+      - "openai/gpt-4.1"
+      - "deepseek/deepseek-r1"
+    fetch: true  # Auto-discovery: all 200+ models available
+  titleConvo: true
+  titleEndpoint: "anthropic"
+  titleModel: "claude-haiku-4-5-20251001"
+```
+
+**Railway Environment Variable:**
+```bash
+OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+### DeepSeek
+
+Kínai AI modell, kiváló kód és reasoning képességekkel.
+
+**librechat.yaml konfig:**
+```yaml
+- name: "DeepSeek"
+  apiKey: "${DEEPSEEK_API_KEY}"
+  baseURL: "https://api.deepseek.com/v1/"
+  models:
+    default:
+      - "deepseek-chat"
+      - "deepseek-reasoner"
+  titleConvo: true
+  titleEndpoint: "anthropic"
+  titleModel: "claude-haiku-4-5-20251001"
+```
+
+**Railway Environment Variable:**
+```bash
+DEEPSEEK_API_KEY=sk-...
+```
+
+### Perplexity
+
+Online keresés integrált AI modell.
+
+**librechat.yaml konfig:**
+```yaml
+- name: "Perplexity"
+  apiKey: "${PERPLEXITY_API_KEY}"
+  baseURL: "https://api.perplexity.ai/"
+  models:
+    default:
+      - "sonar"
+      - "sonar-pro"
+      - "sonar-reasoning"
+      - "sonar-reasoning-pro"
+  titleConvo: true
+  titleEndpoint: "anthropic"
+  titleModel: "claude-haiku-4-5-20251001"
+```
+
+### Title Generation for Custom Endpoints
+
+Custom endpointok (DeepSeek, Perplexity, OpenRouter) nem generálnak automatikusan chat címeket. Megoldás: `titleEndpoint` és `titleModel` beállítása.
+
+```yaml
+titleConvo: true                           # Enable title generation
+titleEndpoint: "anthropic"                 # Use Anthropic for title
+titleModel: "claude-haiku-4-5-20251001"   # Fast & cheap model
+```
+
+**Miért Anthropic?** A Haiku gyors és olcsó, minden custom endpoint így konzisztens címeket kap.
+
+## Current Date Injection (All Models)
+
+Minden modell (agent és sima model is) tudja a jelenlegi dátumot a system prompt-ban.
+
+### Implementáció
+
+**Fájl:** `api/app/clients/BaseClient.js` (312-349. sor)
+
+```javascript
+addInstructions(messages, instructions, beforeLast = false) {
+  if (!instructions || Object.keys(instructions).length === 0) {
+    return messages;
+  }
+
+  // === ACTIONABLEPLUS: Add current date to all instructions ===
+  // To disable: remove this block (lines until "=== END ACTIONABLEPLUS ===")
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const instructionsWithDate = {
+    ...instructions,
+    content: `Current date: ${currentDate}\n\n${instructions.content || ''}`,
+  };
+  // === END ACTIONABLEPLUS ===
+
+  // ... rest of method uses instructionsWithDate
+}
+```
+
+### Visszavonás
+
+Ha problémát okozna, töröld a `=== ACTIONABLEPLUS ===` és `=== END ACTIONABLEPLUS ===` közötti blokkot, és változtasd vissza `instructionsWithDate`-et `instructions`-ra.
+
+## LibreChat v0.8.2 - NE FRISSÍTS!
+
+**FIGYELEM:** A LibreChat v0.8.2 merge HIBÁS, stream 404 hibákat okoz!
+
+### Stabil verzió
+
+A projekt jelenleg **v0.8.1** alapú (commit: `5d94dc669`). Ne merge-elj újabb LibreChat verziókat!
+
+### Ha véletlenül frissítettél
+
+```bash
+# Visszaállítás stabil verzióra
+git reset --hard 5d94dc669
+
+# Majd cherry-pick a custom módosítások
+git cherry-pick <custom-commit-hash>
+```
+
+### Tünetek ha v0.8.2 van deploy-olva
+
+- "Stream not found (404) - job completed or expired"
+- "Stream error (network failure) - will attempt reconnect"
+- Chat nem működik semmilyen modellel/agent-tel
+
 ## Railway Rollback - Stable Commits
 
 Ha problémás a deploy, Railway dashboard-on visszaállítható egy korábbi stabil verzióra:
