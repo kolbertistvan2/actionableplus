@@ -314,8 +314,22 @@ class BaseClient {
       return messages;
     }
 
+    // === ACTIONABLEPLUS: Add current date to all instructions ===
+    // To disable: remove this block (lines until "=== END ACTIONABLEPLUS ===")
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const instructionsWithDate = {
+      ...instructions,
+      content: `Current date: ${currentDate}\n\n${instructions.content || ''}`,
+    };
+    // === END ACTIONABLEPLUS ===
+
     if (!beforeLast) {
-      return [instructions, ...messages];
+      return [instructionsWithDate, ...messages];
     }
 
     // Legacy behavior: add instructions before the last message
@@ -324,7 +338,7 @@ class BaseClient {
       payload.push(...messages.slice(0, -1));
     }
 
-    payload.push(instructions);
+    payload.push(instructionsWithDate);
 
     if (messages.length > 0) {
       payload.push(messages[messages.length - 1]);
