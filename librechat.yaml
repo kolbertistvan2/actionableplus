@@ -65,7 +65,8 @@ endpoints:
           - "sonar-deep-research"
         fetch: false
       titleConvo: true
-      titleModel: "sonar"
+      titleEndpoint: "anthropic"
+      titleModel: "claude-haiku-4-5-20251001"
       summarize: true
       summaryModel: "sonar"
       forcePrompt: false
@@ -85,7 +86,8 @@ endpoints:
           - "deepseek-reasoner"    # Thinking mode (CoT reasoning)
         fetch: false
       titleConvo: true
-      titleModel: "deepseek-chat"
+      titleEndpoint: "anthropic"
+      titleModel: "claude-haiku-4-5-20251001"
       summarize: true
       summaryModel: "deepseek-chat"
       forcePrompt: false
@@ -106,7 +108,8 @@ endpoints:
           - "moonshot-v1-32k"      # Faster, 32k context
         fetch: false
       titleConvo: true
-      titleModel: "moonshot-v1-32k"
+      titleEndpoint: "anthropic"
+      titleModel: "claude-haiku-4-5-20251001"
       summarize: true
       summaryModel: "moonshot-v1-32k"
       forcePrompt: false
@@ -132,7 +135,8 @@ endpoints:
           - "qwen/qwen3-235b-a22b"
         fetch: true
       titleConvo: true
-      titleModel: "anthropic/claude-sonnet-4"
+      titleEndpoint: "anthropic"
+      titleModel: "claude-haiku-4-5-20251001"
       summarize: true
       summaryModel: "anthropic/claude-sonnet-4"
       forcePrompt: false
