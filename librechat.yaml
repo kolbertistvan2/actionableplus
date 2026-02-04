@@ -29,7 +29,6 @@ modelSpecs:
     - openAI
     - Perplexity
     - DeepSeek
-    - Kimi
     - OpenRouter
   list:
     - name: ecommerce-consultant
@@ -94,28 +93,6 @@ endpoints:
       dropParams: ["user"]
       modelDisplayLabel: "DeepSeek"
       iconURL: "https://www.deepseek.com/favicon.ico"
-
-    # Kimi K2.5 (Moonshot AI) - Visual agentic intelligence
-    # 256k context, agent swarm (up to 100 sub-agents)
-    # Pricing: $0.60/M input, $3.00/M output
-    - name: "Kimi"
-      apiKey: "${MOONSHOT_API_KEY}"
-      baseURL: "https://api.moonshot.cn/v1/"
-      models:
-        default:
-          - "kimi-k2.5"            # Latest visual agentic model
-          - "moonshot-v1-128k"     # Previous gen, 128k context
-          - "moonshot-v1-32k"      # Faster, 32k context
-        fetch: false
-      titleConvo: true
-      titleEndpoint: "anthropic"
-      titleModel: "claude-haiku-4-5-20251001"
-      summarize: true
-      summaryModel: "moonshot-v1-32k"
-      forcePrompt: false
-      dropParams: ["user"]
-      modelDisplayLabel: "Kimi"
-      iconURL: "https://www.kimi.com/favicon.ico"
 
     # OpenRouter - Access 200+ models through one API
     # Pricing varies by model, see: https://openrouter.ai/models
