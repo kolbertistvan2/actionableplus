@@ -16,10 +16,11 @@ E-commerce consulting app with specialized AI agents (based on LibreChat).
 - **Deployment:** Railway (production: https://app.actionableplus.com)
 - **Local Dev:** Docker Desktop
 
-## Latest AI Models (Dec 2025)
+## Latest AI Models (Feb 2026)
 
 ### Anthropic
-- `claude-opus-4-5-20251101` - Most capable
+- `claude-opus-4-6-20260205` - Most capable, 1M context, agent teams, adaptive thinking
+- `claude-opus-4-5-20251101` - Previous flagship
 - `claude-sonnet-4-5-20250929` - Balanced
 - `claude-haiku-4-5-20251001` - Fast
 - See: https://docs.anthropic.com/en/docs/about-claude/models
@@ -108,7 +109,7 @@ OPENAI_API_KEY=<key>
 
 # Models
 ENDPOINTS=agents,google,anthropic,openAI
-ANTHROPIC_MODELS=claude-opus-4-5-20251101,claude-sonnet-4-5-20250929,...
+ANTHROPIC_MODELS=claude-opus-4-6-20260205,claude-opus-4-5-20251101,claude-sonnet-4-5-20250929,...
 GOOGLE_MODELS=gemini-3-pro-preview,gemini-3-flash-preview,...
 OPENAI_MODELS=gpt-5.2,gpt-5.1,gpt-5,...
 
